@@ -9280,9 +9280,16 @@ length (  setdiff ( trueseq.key$WGS.id,snv4$WGS.id ) )
 
 snv4$uid = make.unique(paste ( snv4$sample, snv4$VEP_Worst_Gene, snv4$pos))
 
-#cosmic = snv4[ snv4$is.cancer == "yes", ]
+# 4/21/2022 
+# fix eliminate RNA depth < 6
 cosmic = snv4 
 cosmic$logratio = cosmic$neg_log_ratio
+cosmic$RNA_DEPTH = cosmic$RNA_ALT_COUNT + cosmic$RNA_REF_COUNT
+dim ( cosmic )
+
+cosmic = cosmic[cosmic$RNA_DEPTH >=5, ] # make sure there is enough depth here
+dim ( cosmic )
+quantile ( cosmic$RNA_DEPTH)
 #cosmic$logratio = ifelse ( cosmic$logratio== -Inf, max( ))
 
 
@@ -9312,8 +9319,8 @@ rafdaf_color = c( EXTREME_HIGH="#d65175", HIGH="#f5d9cb", LOW="#b8cce3", EXTREME
 lthis = cosmic [ ! duplicated ( paste ( cosmic$WGS.id, cosmic$VEP_Worst_Gene ) ) & cosmic$is.sig == "sig"  & cosmic$VEP_Worst_Impact %in% c("HIGH", "MODERATE")  , ] 
 lthis = lthis [ order (   abs (lthis$neg_log_ratio) , lthis$logp, decreasing = T ), ]
 
-View ( lthis[ lthis$is.cancer == "yes" & grepl ( "LOW", lthis$balance), c(view_snv,"rafdaf","neg_log_ratio","logp") ])
-View ( lthis[ lthis$is.cancer == "yes" & grepl ( "HIGH", lthis$balance), c(view_snv,"rafdaf","neg_log_ratio","logp") ])
+#View ( lthis[ lthis$is.cancer == "yes" & grepl ( "LOW", lthis$balance), c(view_snv,"rafdaf","neg_log_ratio","logp") ])
+#View ( lthis[ lthis$is.cancer == "yes" & grepl ( "HIGH", lthis$balance), c(view_snv,"rafdaf","neg_log_ratio","logp") ])
 
 
 
@@ -9641,6 +9648,41 @@ dafraf_plot_all_zscale = ggplot(cosmicz, aes(x=ztpm , y=  rafdaf  , shape = is.c
         ), 
         box.padding = 0.01, size = 4, colour = "black", segment.size  = 0.1, seed = 123
     ) + ggtitle ( "All SNVs ")
+
+
+# simplify and most likely will be used in paper: 4/21/2022
+# remove cancer annotation shape 
+# remove varying color 
+# remove labels
+
+rafdaf_color_simple = c ( HIGH=  "#d65175", LOW="#46a6eb", no.sig = "grey")
+
+
+
+daf_vs_raf = ggplot(cosmic, aes(x=TUMOR.AF, y= RNA_ALT_AF)) + 
+  geom_point( aes ( color=balance_simple , alpha=balance), position=position_jitter(h=0.01, w=0.01)  )  + 
+  scale_color_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+  scale_alpha_manual ( values =  c(EXTREME_HIGH=".7", HIGH=".5", LOW=".5", EXTREME_LOW=".7", no.sig=".3")  ) +
+  theme_minimal()   + xlab("DAF") + ylab ( "RAF") +
+  theme(legend.position="right",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 20 ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12)
+  ) + scale_alpha_manual(values=c(  EXTREME_HIGH=.6, HIGH=.6, LOW=.6, EXTREME_LOW=.6, no.sig=.18  )) +
+  guides(
+    shape = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="cancer gene")
+    , size = FALSE
+    , color = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="RAF/DAF")
+    , alpha = FALSE
+  ) + ggtitle ( "All SNVs ") + geom_abline(intercept =0 , slope = 1) +
+  theme(panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "black") ) +
+  scale_y_continuous(expand = expansion(mult = c(0, .01)))
+
 
 
 ####################### final plot simplify 
