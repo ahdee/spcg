@@ -9730,7 +9730,51 @@ af_port_plot <- ggplot(af_port, aes(fill=balance_simple, y=Freq, x=cancer.subtyp
     ) 
     
   
+# remove none - significance and plot 
 
+nosig_port = af_port[ af_port$balance_simple != "no.sig", ] 
+
+rankhigh2 = nosig_port %>% group_by( cancer.subtype )  %>% 
+  mutate ( 
+    total = sum ( Freq )
+    ) %>% group_by( cancer.subtype, balance_simple ) %>%
+  mutate (
+    percent = round ( Freq / total, 3 )  
+  ) %>% 
+  subset(., balance_simple == "HIGH") %>% 
+  arrange(.,desc(percent)) 
+
+nosig_port$cancer.subtype = factor (  nosig_port$cancer.subtype 
+                                   , levels = rev ( as.character ( rankhigh2$cancer.subtype ) )
+                                   )
+
+
+
+
+af_port_plot_nosig <- ggplot( nosig_port , aes(fill=balance_simple, y=Freq, x=cancer.subtype) )+ 
+    geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
+  # add text but position needs to be set to the same, which is filled
+    geom_text(aes(label = Freq),
+            position = position_fill(vjust = 0.5)
+  ) +  
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="right",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 20   ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + ylab("percentage") + xlab ( "") +
+  scale_fill_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+   guides(
+    fill = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="RAF/DAF balance")
+    ) + coord_flip() +geom_hline(yintercept=.5, color="#868786", size=1.5) 
 
 
 
