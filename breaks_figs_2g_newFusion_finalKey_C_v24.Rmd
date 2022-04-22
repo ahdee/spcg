@@ -9659,10 +9659,16 @@ dafraf_plot_all_zscale = ggplot(cosmicz, aes(x=ztpm , y=  rafdaf  , shape = is.c
 rafdaf_color_simple = c ( HIGH=  "#d65175", LOW="#46a6eb", no.sig = "grey")
 
 
+total_high = nrow ( cosmic[ cosmic$balance_simple == "HIGH", ]) 
+total_nosig = nrow ( cosmic[ cosmic$balance_simple == "no.sig", ]) 
+total_low =  nrow ( cosmic[ cosmic$balance_simple == "LOW", ]) 
 
 daf_vs_raf = ggplot(cosmic, aes(x=TUMOR.AF, y= RNA_ALT_AF)) + 
   geom_point( aes ( color=balance_simple , alpha=balance), position=position_jitter(h=0.01, w=0.01)  )  + 
-  scale_color_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+  scale_color_manual(values = rafdaf_color_simple  
+                     , labels = c(HIGH=paste0 ( "RAF > DAF (" , total_high, ")") , 
+                                LOW=paste0 ( "RAF < DAF (", total_low, ")" ) , 
+                                no.sig=paste0 ( "not significant (", total_nosig, ")")      ) ) +
   scale_alpha_manual ( values =  c(EXTREME_HIGH=".7", HIGH=".5", LOW=".5", EXTREME_LOW=".7", no.sig=".3")  ) +
   theme_minimal()   + xlab("DAF") + ylab ( "RAF") +
   theme(legend.position="right",  legend.key = element_blank(),
@@ -9824,6 +9830,9 @@ nonsym_sym = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous ) )+
 ap2 = cosmic 
 ap2$VEP_Worst_Consequence = gsub ( "synonymous_variant", "synonymous", ap2$VEP_Worst_Consequence)
 ap2$VEP_Worst_Consequence = gsub ( "non_coding_transcript_exon_variant", "noncoding_exon_variant", ap2$VEP_Worst_Consequence)
+
+
+
 ftemp = data.frame ( table ( ap2$VEP_Worst_Consequence) )
 ap2 = ap2[ap2$VEP_Worst_Consequence %in%  as.character ( ftemp[ftemp$Freq > 50, ]$Var1 ), ]
 ap2$synonymous = ap2$VEP_Worst_Consequence
@@ -9925,6 +9934,7 @@ compareTypes <- ap2 %>% group_by( synonymous  )  %>%
 
 compareTypes$synonymous = factor ( compareTypes$synonymous, levels= rev ( unique ( as.character(compareTypes$synonymous))) )
 #%>% mutate(synonymous = factor(synonymous, levels =  unique (  synonymous)  )) %>% 
+
 var_outcome= ggplot(compareTypes, aes(synonymous , percent)) +   
   geom_bar(aes(fill = balance_simple), position = "dodge", stat="identity") +  
   scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
@@ -9946,7 +9956,32 @@ var_outcome= ggplot(compareTypes, aes(synonymous , percent)) +
     fill = guide_legend(title.position="top", title.vjust = .5, override.aes = list(size=10) , title ="RAF/DAF balance")
     ) 
 
+## for each var_outcome group what is the top cancer gene and top non-cancer gene? 
+# need to change back the names 
 
+
+compareTypes$VEP_Worst_Consequence = gsub (  "synonymous", "synonymous_variant", compareTypes$synonymous)
+compareTypes$VEP_Worst_Consequence = gsub ( "noncoding_exon_variant", "non_coding_transcript_exon_variant" , compareTypes$VEP_Worst_Consequence)
+
+
+tab_gene = data.frame ()
+
+for ( v in unique ( as.character ( compareTypes$VEP_Worst_Consequence ) )){
+  v2 = cosmic[ cosmic$VEP_Worst_Consequence %in% v, ]
+  v2_cancer = data.frame ( table ( v2[v2$is.cancer == "yes" & v2$RNA_PVALUE < .05, ]$VEP_Worst_Gene) )
+  v2_cancer = v2_cancer[order ( v2_cancer$Freq, decreasing = T), ]
+  v2_nocancer = data.frame ( table ( v2[v2$is.cancer == "no" & v2$RNA_PVALUE < .05, ]$VEP_Worst_Gene) )
+  v2_nocancer = v2_nocancer[order ( v2_nocancer$Freq, decreasing = T), ]
+  
+  v2_cancer$type = v 
+  v2_cancer$is.cancer = "yes"
+  
+  v2_nocancer$type = v 
+  v2_nocancer$is.cancer = "no"
+  
+  tab_gene = rbind (tab_gene, head ( v2_cancer, 1 ) )
+  tab_gene = rbind (tab_gene, head ( v2_nocancer, 1 ) )
+}
 
 
 
