@@ -28,5 +28,5 @@ FUSION.hugo	/data/SUMMARY/FUSION/FUSION_hugo.rds
 CNA.hugo	/data/SUMMARY/WGS/CNA.alterations_hugo.rds
 SNV.hugo	/data/SUMMARY/WGS/SNV.alterations_hugo.rds
 hugo.db	/ehome/resource//annotation/hugo.convert.rds
-star	/data/SUMMARY/STAR_RAW/rawSTAR_v24.tsv
+star	/data/SUMMARY/STAR_RAW/rawSTAR.tsv
 FUSION_2021	/projects/spcg/rna/SUMMARY/FUSION_NEW/FUSION_2021_FINAL.rds
