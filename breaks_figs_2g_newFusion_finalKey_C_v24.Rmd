@@ -175,6 +175,7 @@ out = readRDS( config$OUT )
 cna = readRDS( config$CNA.hugo)
 snv = readRDS( config$SNV.hugo)
 tpm = readRDS(config$TPM)
+# config STAR raw original is fine and should contain all the genes, use SNHG1 linc rna as test. 
 star = read.table( config$star , header=TRUE,sep="\t",stringsAsFactors = FALSE,na.strings=".",  quote = "", fill = TRUE)
 gc()
 ```
@@ -9873,6 +9874,79 @@ portion_consequence = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous
    guides(
     fill = guide_legend(title.position="top", title.vjust = .5, override.aes = list(size=10) , title ="RAF/DAF balance")
     ) + coord_flip()
+
+
+
+### 
+set.seed(12)
+rcolor2 = sample ( getPalette(20 ) , 8 ) 
+plotByrafdafType <- ggplot(ap2 , aes(fill=synonymous, y=Freq, x=  balance_simple) )+ 
+    geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
+  # add text but position needs to be set to the same, which is filled
+    geom_text(aes(label = Freq),
+            position = position_fill(vjust = .7)
+  ) +  
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="right",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 20 , angle=00, hjust = 0  ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + ylab("percentage") + xlab ( "") +
+  scale_fill_manual(values = rcolor2 , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+   guides(
+    fill = guide_legend(title.position="top", title.vjust = .5, override.aes = list(size=10) , title ="RAF/DAF balance")
+    ) 
+
+
+
+compareTypes <- ap2 %>% group_by( synonymous  )  %>% 
+  subset( balance_simple != "no.sig") %>%
+  mutate ( 
+    total = sum ( Freq )
+    ) %>% group_by( synonymous , balance_simple ) %>%
+  
+  mutate (
+    percent = round ( Freq / total, 3 )  
+  )  %>%  
+  arrange(factor(synonymous, levels = unique(synonymous[balance_simple == "HIGH"
+                                            ][order(dense_rank(-percent[balance_simple == "HIGH"]))]
+  )  )  ) %>% mutate ( balance_simple = factor ( balance_simple , levels = c("LOW", "HIGH")) 
+                       ) %>% data.frame() 
+
+
+
+compareTypes$synonymous = factor ( compareTypes$synonymous, levels= rev ( unique ( as.character(compareTypes$synonymous))) )
+#%>% mutate(synonymous = factor(synonymous, levels =  unique (  synonymous)  )) %>% 
+var_outcome= ggplot(compareTypes, aes(synonymous , percent)) +   
+  geom_bar(aes(fill = balance_simple), position = "dodge", stat="identity") +  
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="none",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 20 , angle=30, hjust = 1  ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "grey") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + ylab("percentage") + xlab ( "") +
+  scale_fill_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+   guides(
+    fill = guide_legend(title.position="top", title.vjust = .5, override.aes = list(size=10) , title ="RAF/DAF balance")
+    ) 
+
+
 
 
 
