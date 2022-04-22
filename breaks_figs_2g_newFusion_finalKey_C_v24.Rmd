@@ -9777,9 +9777,58 @@ af_port_plot_nosig <- ggplot( nosig_port , aes(fill=balance_simple, y=Freq, x=ca
     ) + coord_flip() +geom_hline(yintercept=.5, color="#868786", size=1.5) 
 
 
+### add proportion but in the context of type
+table ( cosmic$VEP_Worst_Consequence)
+
+ap2 = cosmic 
+ap2$VEP_Worst_Consequence = gsub ( "synonymous_variant", "Synonymous", ap2$VEP_Worst_Consequence)
+ap2 = ap2[ap2$VEP_Worst_Consequence %in% c ( 'missense_variant', 'frameshift_variant', 'inframe_insertion', 'Synonymous' ),  ]
+
+
+ap2$synonymous = ifelse ( ap2$VEP_Worst_Consequence == "Synonymous", "Synonymous", "NonSynonymous"  )
+
+
+ap2 = data.frame (  table ( ap2 [ , c ( "synonymous", "balance_simple") ]  ), stringsAsFactors = FALSE )  
+ap2$balance_simple = factor (  ap2$balance_simple , levels = c( "HIGH", "no.sig", "LOW") )
+
+
+
+
+nonsym_sym = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous ) )+ 
+    geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
+  # add text but position needs to be set to the same, which is filled
+    geom_text(aes(label = Freq),
+            position = position_fill(vjust = 0.5)
+  ) +  
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="right",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 20 , angle=30, hjust = 1  ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + ylab("percentage") + xlab ( "") +
+  scale_fill_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+   guides(
+    fill = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="RAF/DAF balance")
+    ) 
+
+
+
+
+
+
+
+
 
 ### do some diseases have varying degrees of allelic imbalance? 
-
+#### these are not useful. 
 ddd = cosmic [ ! duplicated ( paste ( cosmic$WGS.id, cosmic$VEP_Worst_Gene ) ) 
                     #& cosmic$is.sig == "sig"  
                     & cosmic$VEP_Worst_Impact %in% c("HIGH", "MODERATE")
