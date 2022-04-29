@@ -9280,6 +9280,9 @@ length (  setdiff ( trueseq.key$WGS.id,snv4$WGS.id ) )
 
 
 snv4$uid = make.unique(paste ( snv4$sample, snv4$VEP_Worst_Gene, snv4$pos))
+```
+
+```{r}
 
 # 4/21/2022 
 # fix eliminate RNA depth < 6
@@ -9651,6 +9654,11 @@ dafraf_plot_all_zscale = ggplot(cosmicz, aes(x=ztpm , y=  rafdaf  , shape = is.c
     ) + ggtitle ( "All SNVs ")
 
 
+
+
+
+
+
 # simplify and most likely will be used in paper: 4/21/2022
 # remove cancer annotation shape 
 # remove varying color 
@@ -9785,6 +9793,7 @@ af_port_plot_nosig <- ggplot( nosig_port , aes(fill=balance_simple, y=Freq, x=ca
 
 
 ### add proportion but in the context of type
+
 table ( cosmic$VEP_Worst_Consequence)
 
 ap2 = cosmic 
@@ -9826,15 +9835,116 @@ nonsym_sym = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous ) )+
     fill = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="RAF/DAF balance")
     ) 
 
-# plot any consequences that has more than 50 events. 
-ap2 = cosmic 
-ap2$VEP_Worst_Consequence = gsub ( "synonymous_variant", "synonymous", ap2$VEP_Worst_Consequence)
-ap2$VEP_Worst_Consequence = gsub ( "non_coding_transcript_exon_variant", "noncoding_exon_variant", ap2$VEP_Worst_Consequence)
+
+#### what are the AF percentage between comsic genes and non-cancer genes. 
+
+rafdaf_cosmic_plot = data.frame (  table ( cosmic [ , c ( "balance_simple", "is.cancer") ]  ), stringsAsFactors = FALSE )   %>% 
+   subset(., balance_simple != "no.sig") %>% 
+   group_by( is.cancer  ) %>% 
+   mutate(  total = sum ( Freq), 
+            percent = round (  Freq / total, 2 )
+            , is.cancer = factor ( is.cancer, levels= c("yes", "no"))
+            ) %>% 
+   ggplot( . , aes(fill=balance_simple, y=percent, x=is.cancer) )+ 
+   geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
+   # add text but position needs to be set to the same, which is filled
+   geom_text(aes(label = Freq),
+             position = position_fill(vjust = 0.5)
+             , size = 20
+   ) +  
+   scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="none",  legend.key = element_blank(),
+         axis.text.x = element_text(size= 20 , vjust=0, angle=0  ), 
+         axis.text.y = element_text(size= 20 ),
+         axis.title.x = element_text(size=20),
+         axis.title.y     = element_text(size=20), 
+         legend.text      =element_text(size=12), 
+         panel.grid.major = element_blank()
+         , panel.grid.minor = element_blank()
+         ,panel.background = element_blank()
+         , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+         , panel.border=element_blank()
+         
+   ) + ylab("percentage") + xlab ( "") +
+   scale_fill_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+   guides(
+     fill = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="RAF/DAF balance")
+   ) +geom_hline(yintercept=.5, color="#868786", size=1.5) +  xlab("Cosmic Cancer Gene") 
+ 
+
+
+
+
+# what are the percent AF between oncogene and TSG? 
+
+ctemp = merge ( cosmic,  genelist[  , c("gene", "cosmic.annot" )], by.x='VEP_Worst_Gene', by.y='gene')
+ctemp = ctemp[ctemp$RNA_PVALUE < .05,   ]
+ctemp = ctemp [ ctemp$is.cancer == "yes", ]
+ctemp$cosmic.annot = ifelse ( grepl ( ",", ctemp$cosmic.annot ), "MULTI", ctemp$cosmic.annot )
+ 
+ 
+rafdaf_oncTSG_plot =  data.frame (  table ( ctemp [ , c ( "balance_simple", "cosmic.annot") ]  ), stringsAsFactors = FALSE )   %>% 
+    subset(., balance_simple != "no.sig") %>% 
+    group_by( cosmic.annot  ) %>% 
+    mutate(  total = sum ( Freq), 
+             percent = round (  Freq / total, 2 )  
+    )  %>% 
+    ggplot( . , aes(fill=balance_simple, y=percent, x=cosmic.annot) )+ 
+    geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
+    # add text but position needs to be set to the same, which is filled
+    geom_text(aes(label = Freq),
+              position = position_fill(vjust = 0.5)
+              , size = 16 
+    ) +  
+    scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+    theme(legend.position="none",  legend.key = element_blank(),
+          axis.text.x = element_text(size= 20, hjust = 1, angle=20   ), 
+          axis.text.y = element_text(size= 20 ),
+          axis.title.x = element_text(size=20),
+          axis.title.y     = element_text(size=20), 
+          legend.text      =element_text(size=12), 
+          panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+          
+    ) + ylab("percentage") + xlab ( "") +
+    scale_fill_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+    guides(
+       fill = guide_legend(title.position="top", title.hjust = 0.5, override.aes = list(size=10) , title ="RAF/DAF balance")
+    ) + 
+   #coord_flip() +
+   geom_hline(yintercept=.5, color="#868786", size=1.5) 
+ 
+ 
+rafdaf_cosmic_plot + rafdaf_oncTSG_plot
+
+
+
+
+
+
+# ? what is the ratio of AF for each vep consquences? 
+## only vep consequences with > 50 are plotted. 
+
+pretty_var_names = c( synonymous_variant = "synonymous", non_coding_transcript_exon_variant = "noncoding_exon_variant" )
+
+ap2 = cosmic [ cosmic$RNA_PVALUE < .05, ]
+
+for ( f in names ( pretty_var_names) ){
+  ap2$VEP_Worst_Consequence = gsub ( f, as.character ( pretty_var_names[f] ) , ap2$VEP_Worst_Consequence)
+}
+
+#ap2$VEP_Worst_Consequence = gsub ( "synonymous_variant", "synonymous", ap2$VEP_Worst_Consequence)
+#ap2$VEP_Worst_Consequence = gsub ( "non_coding_transcript_exon_variant", "noncoding_exon_variant", ap2$VEP_Worst_Consequence)
 
 
 
 ftemp = data.frame ( table ( ap2$VEP_Worst_Consequence) )
-ap2 = ap2[ap2$VEP_Worst_Consequence %in%  as.character ( ftemp[ftemp$Freq > 50, ]$Var1 ), ]
+aa_conq = as.character ( ftemp[ftemp$Freq > 50, ]$Var1 )
+
+ap2 = ap2[ap2$VEP_Worst_Consequence %in%  aa_conq , ]
 ap2$synonymous = ap2$VEP_Worst_Consequence
 ap2 = data.frame (  table ( ap2 [ , c ( "synonymous", "balance_simple") ]  ), stringsAsFactors = FALSE )  
 ap2$balance_simple = factor (  ap2$balance_simple , levels = c( "HIGH", "no.sig", "LOW") )
@@ -9857,9 +9967,7 @@ ap2$synonymous = factor (  ap2$synonymous
 
 
 
-
-
-portion_consequence = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous ) )+ 
+portion_consequence_stack = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous ) )+ 
     geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
   # add text but position needs to be set to the same, which is filled
     geom_text(aes(label = Freq),
@@ -9886,7 +9994,8 @@ portion_consequence = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous
 
 
 
-### 
+### AF stack but comparing LOW vs HIGH  
+
 set.seed(12)
 rcolor2 = sample ( getPalette(20 ) , 8 ) 
 plotByrafdafType <- ggplot(ap2 , aes(fill=synonymous, y=Freq, x=  balance_simple) )+ 
@@ -9915,6 +10024,7 @@ plotByrafdafType <- ggplot(ap2 , aes(fill=synonymous, y=Freq, x=  balance_simple
     ) 
 
 
+## vep_consquences bar version
 
 compareTypes <- ap2 %>% group_by( synonymous  )  %>% 
   subset( balance_simple != "no.sig") %>%
@@ -9985,6 +10095,7 @@ for ( v in unique ( as.character ( compareTypes$VEP_Worst_Consequence ) )){
 
 
 
+# how does it look like with cosmo 
 
 
 
