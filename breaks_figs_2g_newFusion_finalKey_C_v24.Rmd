@@ -10095,6 +10095,10 @@ for ( v in unique ( as.character ( compareTypes$VEP_Worst_Consequence ) )){
 
 
 
+kable( tab_gene[ tab_gene$Freq > 2, ]  , format = "html" , row.names = F, caption = "Most frequent gene in each category > 2" ) %>% kable_classic(full_width = F, position = "center")
+
+
+
 # how does it look like with cosmo 
 
 
@@ -10123,7 +10127,7 @@ sum ( temp[!duplicated ( temp$VEP_Worst_Consequence), ]  $total)
 
 
 
-byCancer_Gene_df = temp 
+#byCancer_Gene_df = temp 
 byCancer_Gene_df$label = paste0 ( round ( byCancer_Gene_df$percent * 100 , 1 ), "%" ) 
 
 
@@ -10137,11 +10141,12 @@ byCancer_Gene_df$VEP_Worst_Consequence = factor ( byCancer_Gene_df$VEP_Worst_Con
 ccc_tsgOnc = c( ONCOGENE='#bf4f3b', OTHER='#ced6db', TSG = '#619dc7')
 
    
-   ggplot(byCancer_Gene_df, aes(fill=cosmic.annot, y=percent,  x=VEP_Worst_Consequence) )+ 
+vep_aa_cosmic_plot =    ggplot(byCancer_Gene_df, aes(fill=cosmic.annot, y=percent,  x=VEP_Worst_Consequence) )+ 
    geom_bar(position="stack", stat="identity", width=1, color='#e8eded') +
    # add text but position needs to be set to the same, which is filled
    geom_text(aes(label = label),
              position = position_stack(vjust = 0.5)
+             , size = 8.5
    ) +  
    scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
    theme(legend.position="bottom",  legend.key = element_blank(),
