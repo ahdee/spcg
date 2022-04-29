@@ -9920,8 +9920,8 @@ rafdaf_oncTSG_plot =  data.frame (  table ( ctemp [ , c ( "balance_simple", "cos
  
 rafdaf_cosmic_plot + rafdaf_oncTSG_plot
 
-
-
+# save this for later for stack plot of cosmic annotations for each type of aa vep consequences. 
+byCancer_Gene_df = ctemp
 
 
 
@@ -10098,6 +10098,65 @@ for ( v in unique ( as.character ( compareTypes$VEP_Worst_Consequence ) )){
 # how does it look like with cosmo 
 
 
+ 
+quantile ( byCancer_Gene_df$RNA_PVALUE)
+
+# convert all to "other" if not TSG or oncgogen
+byCancer_Gene_df$cosmic.annot = ifelse ( byCancer_Gene_df$cosmic.annot %in% c("TSG", "ONCOGENE"), byCancer_Gene_df$cosmic.annot, 'OTHER')
+
+temp = byCancer_Gene_df %>% 
+   group_by(VEP_Worst_Consequence ) %>% 
+   mutate(n = n())  %>%
+   group_by(  VEP_Worst_Consequence, cosmic.annot  ) %>% 
+   summarise ( 
+      percent = n() /n,
+      total = n 
+      ) %>% filter ( !duplicated ( VEP_Worst_Consequence, cosmic.annot) ) %>% data.frame()
+# sanity check total should equal previous cancer gene yes catgories 
+sum ( temp[!duplicated ( temp$VEP_Worst_Consequence), ]  $total)
+# now only use vep that was used previously 
+
+temp = temp [ temp$VEP_Worst_Consequence %in% compareTypes$VEP_Worst_Consequence, ]
+sum ( temp[!duplicated ( temp$VEP_Worst_Consequence), ]  $total)
+
+
+
+
+
+byCancer_Gene_df = temp 
+byCancer_Gene_df$label = paste0 ( round ( byCancer_Gene_df$percent * 100 , 1 ), "%" ) 
+
+
+
+for ( f in names ( pretty_var_names) ){
+   byCancer_Gene_df$VEP_Worst_Consequence = gsub ( f, as.character ( pretty_var_names[f] ) , byCancer_Gene_df$VEP_Worst_Consequence)
+}
+
+byCancer_Gene_df$VEP_Worst_Consequence = factor ( byCancer_Gene_df$VEP_Worst_Consequence, levels = levels  ( var_outcome$data$synonymous)   )   
+
+ccc_tsgOnc = c( ONCOGENE='#bf4f3b', OTHER='#ced6db', TSG = '#619dc7')
+
+   
+   ggplot(byCancer_Gene_df, aes(fill=cosmic.annot, y=percent,  x=VEP_Worst_Consequence) )+ 
+   geom_bar(position="stack", stat="identity", width=1, color='#e8eded') +
+   # add text but position needs to be set to the same, which is filled
+   geom_text(aes(label = label),
+             position = position_stack(vjust = 0.5)
+   ) +  
+   scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="bottom",  legend.key = element_blank(),
+         axis.text.x = element_text(size= 20 , hjust = 1, angle=30  ), 
+         axis.text.y = element_text(size= 20 ),
+         axis.title.x = element_text(size=20),
+         axis.title.y     = element_text(size=20), 
+         legend.text      =element_text(size=12), 
+         panel.grid.major = element_blank()
+         , panel.grid.minor = element_blank()
+         ,panel.background = element_blank()
+         , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+         , panel.border=element_blank()
+         
+   ) + ylab("percentage") + xlab ( "") + scale_fill_manual(values = ccc_tsgOnc )
 
 
 ### do some diseases have varying degrees of allelic imbalance? 
