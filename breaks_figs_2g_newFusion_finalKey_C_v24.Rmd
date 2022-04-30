@@ -10135,6 +10135,7 @@ kable( tab_gene[ tab_gene$Freq > 2, ]  , format = "html" , row.names = F, captio
 
 ## plot by genes. 
 ### hold
+# stop here - next should remove some aa consequence categories. 
 
 highFreqGene <- cosmic[cosmic$VEP_Worst_Gene %in% as.character ( tab_gene[ tab_gene$Freq > 2, ]$Var1 ), ]
 
@@ -10166,7 +10167,80 @@ highFreqGenePlot <-highFreqGene %>% group_by( VEP_Worst_Gene, VEP_Worst_Conseque
   ggforce::facet_row(vars(VEP_Worst_Consequence), scales = 'free', space = 'free') + xlab ("")
 
 
- 
+
+topCancerGenes = data.frame ( table ( cosmic[ cosmic$RNA_PVALUE< .05 & cosmic$is.cancer == "yes", ]$VEP_Worst_Gene)) 
+topCancerGenes= topCancerGenes[ order ( -topCancerGenes$Freq ), ]
+
+
+
+
+topCancerGenes <- cosmic[cosmic$VEP_Worst_Gene %in% as.character ( head ( topCancerGenes$Var1, 6) ), ]
+
+topCancerGenesPlot <-topCancerGenes %>% group_by( VEP_Worst_Gene, VEP_Worst_Consequence, balance_simple ) %>% 
+  summarise ( total = n() ) %>% 
+  ggplot(.) + 
+    geom_bar( 
+             mapping = aes(x=VEP_Worst_Gene , 
+                           y = total, fill = as.factor(balance_simple)  ), 
+             stat="identity", 
+             position='stack', 
+             width = 1, color = "black"
+             
+             ) + scale_fill_manual(values = rafdaf_color_simple ) +
+   scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="bottom",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 15 , angle=30, hjust = 1  ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "grey") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + # scale_x_reordered() +
+  ggforce::facet_row(vars(VEP_Worst_Consequence), scales = 'free', space = 'free') + xlab ("")
+
+
+
+
+topNonCancerGenes = data.frame ( table ( cosmic[ cosmic$RNA_PVALUE< .05 & cosmic$is.cancer == "no", ]$VEP_Worst_Gene)) 
+topNonCancerGenes= topNonCancerGenes[ order ( -topNonCancerGenes$Freq ), ]
+
+topNonCancerGenes <- cosmic[cosmic$VEP_Worst_Gene %in% as.character ( head ( topNonCancerGenes$Var1, 6) ), ]
+
+topNonCancerGenesPlot <-topNonCancerGenes %>% group_by( VEP_Worst_Gene, VEP_Worst_Consequence, balance_simple ) %>% 
+  summarise ( total = n() ) %>% 
+  ggplot(.) + 
+    geom_bar( 
+             mapping = aes(x=VEP_Worst_Gene , 
+                           y = total, fill = as.factor(balance_simple)  ), 
+             stat="identity", 
+             position='stack', 
+             width = 1, color = "black"
+             
+             ) + scale_fill_manual(values = rafdaf_color_simple ) +
+   scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="bottom",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 15 , angle=30, hjust = 1  ), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "grey") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + # scale_x_reordered() +
+  ggforce::facet_row(vars(VEP_Worst_Consequence), scales = 'free', space = 'free') + xlab ("")
+
+
+
+
 
 
 
