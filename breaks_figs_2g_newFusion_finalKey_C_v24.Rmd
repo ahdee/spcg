@@ -5914,6 +5914,106 @@ tab.fusion.frame %>%  dplyr::group_by(frameness)  %>%    dplyr::summarise(
     ) %>% arrange ( desc ( Total ) ) %>% kable( .  , format = "html" , row.names = F, caption="" , table.attr = "style='width:40%;'" ) %>% kable_classic(full_width = T, position = "center", ) 
 ```
 
+```{r}
+# 5.4.2022 adding exon counts 
+
+exon = readRDS( '/data/SUMMARY/EXON_COUNT/exon_counts_correlations.rds')
+exon_cor = exon$corr
+exon_tpm = exon$data
+rm ( exon )
+gc()
+
+# subset for cancer genes only 
+exon_tpm = exon_tpm[ exon_tpm$gene_name %in% as.character ( genelist$gene ),  c ( names ( exon_tpm)[1:12], trueseq.key$RNAseq.id) ]
+length ( unique ( exon_tpm$transcript_id  ) )
+
+
+
+
+exon_cor2 = melt ( as.matrix ( exon_cor ) )
+colnames ( exon_cor2) <- c('txn','tube','value')
+exon_cor2 = exon_cor2[exon_cor2$tube %in% trueseq.key$RNAseq.id, ]
+
+
+tp53 = exon_tpm[ exon_tpm$gene_name == "TP53", ]
+tp53 = exon_cor2[ exon_cor2$txn %in% unique ( tp53$transcript_id  ), ]
+tp53 = tp53 [ order ( tp53$value), ]
+tp53= tp53 [ !duplicated ( tp53$tube), ]
+#tp53 = tp53[tp53$tube %in% trueseq.key$RNAseq.id,]
+
+# test 
+exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "AJ10", "Z12", "K2")]
+
+colSums(   exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "AJ10", "Z12", "K2")]
+ )
+
+
+exon_tab = data.frame ()
+total = length (  unique ( exon_tpm$gene_name )  )
+for ( gene in unique ( exon_tpm$gene_name )  ){
+  
+geneE = exon_tpm[ exon_tpm$gene_name == gene , ]
+geneE = exon_cor2[ exon_cor2$txn %in% unique ( geneE$transcript_id  ), ]
+geneE = geneE [ order ( geneE$value), ]
+geneE = geneE[geneE$value < .3, ]
+geneE= geneE [ !duplicated ( geneE$tube), ]
+
+if ( nrow ( geneE ) > 0 ){
+  geneE$gene = gene 
+  exon_tab = rbind (exon_tab, geneE )
+}
+
+print ( total )
+total = total - 1 
+
+}
+
+exon_tab = exon_tab[order ( exon_tab$value), ]
+
+
+for ( g in tsg.onco$gene ){
+
+g =   exon_tab[exon_tab$gene == g, ]
+
+if ( nrow ( g ) > 0 ){  
+
+  for ( t in as.character ( unique ( g$txn ) ) ) {  
+
+    #t = 'ENST00000244741.9' # ENST00000227507.2
+tsample = as.character ( exon_tab[!is.na ( exon_tab$txn) &   exon_tab$txn == t , ]$tube )
+base = exon_tpm[ exon_tpm$transcript_id == t,  c ( "median", "exon_number", "gene_name", tsample) ]
+
+
+
+
+base = melt ( base, id = c("exon_number", "gene_name" ) ) 
+base$g = ifelse ( base$variable == "median", 'base', 'study' ) 
+
+gp = ggplot(base, aes(x=exon_number , y=value, group= variable )) +
+  geom_line(aes(color=g))+
+  geom_point(aes(color=g, alpha=g), size=10) +
+   theme(legend.position="none",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=30),
+        axis.title.y     = element_text(size=30), 
+        legend.text      =element_text(size=12)
+        , plot.title = element_text(size = 30, face = "bold")
+  ) + scale_color_manual(values = c(base="#367699", study="grey")) +
+  scale_alpha_manual( values = c(base=.9, study=.5) ) + ggtitle ( base$gene_name[1] )
+
+plot ( gp )
+
+}
+
+}
+  
+}
+
+
+
+```
 
 
 ```{r}
@@ -10134,7 +10234,7 @@ for ( v in unique ( as.character ( compareTypes$VEP_Worst_Consequence ) )){
 kable( tab_gene[ tab_gene$Freq > 2, ]  , format = "html" , row.names = F, caption = "Most frequent gene in each category > 2" ) %>% kable_classic(full_width = F, position = "center")
 
 ## plot by genes. 
-### hold
+
 # stop here - next should remove some aa consequence categories. 
 
 highFreqGene <- cosmic[cosmic$VEP_Worst_Gene %in% as.character ( tab_gene[ tab_gene$Freq > 2, ]$Var1 ), ]
