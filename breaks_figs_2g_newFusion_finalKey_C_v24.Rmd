@@ -5917,14 +5917,14 @@ tab.fusion.frame %>%  dplyr::group_by(frameness)  %>%    dplyr::summarise(
 ```{r}
 # 5.4.2022 adding exon counts 
 
-exon = readRDS( '/data/SUMMARY/EXON_COUNT/exon_counts_correlations2.rds')
+exon = readRDS( '/data/SUMMARY/EXON_COUNT/exon_counts_correlations2.rds') 
 exon_cor = exon$corr
 exon_tpm = exon$data
 rm ( exon )
 gc()
 
 # subset for cancer genes only 
-exon_tpm = exon_tpm[ exon_tpm$gene_name %in% as.character ( genelist$gene ),  c ( names ( exon_tpm)[1:12], trueseq.key$RNAseq.id) ]
+exon_tpm = exon_tpm[ exon_tpm$gene_name %in% as.character ( genelist$gene ),  c ( names ( exon_tpm)[1:12], trueseq.key$RNAseq.id, "median") ]
 length ( unique ( exon_tpm$transcript_id  ) )
 
 
@@ -5960,6 +5960,12 @@ base = melt ( exon_tpm[ exon_tpm$transcript_id == t,  c ( "median", "exon_number
 
 base$g = ifelse ( base$variable == "median", 'base', 'study' ) 
 
+base = base %>% group_by(variable) %>% mutate ( 
+  tpm_total = sum ( value)
+  ) %>% data.frame()
+
+base$tpm_total = paste0 ( "(", as.character ( base$variable) , ")", round ( base$tpm_total, 1) )
+
 gp = ggplot(base, aes(x=exon_number , y=value, group= variable )) +
   geom_line(aes(color=g))+
   geom_point(aes(color=g, alpha=g), size=10) +
@@ -5972,7 +5978,13 @@ gp = ggplot(base, aes(x=exon_number , y=value, group= variable )) +
         legend.text      =element_text(size=12)
         , plot.title = element_text(size = 30, face = "bold")
   ) + scale_color_manual(values = c(base="#367699", study="grey")) +
-  scale_alpha_manual( values = c(base=.9, study=.5) ) + ggtitle ( base$gene_name[1] )
+  scale_alpha_manual( values = c(base=.9, study=.5) ) + ggtitle ( base$gene_name[1] ) +
+   geom_text_repel(data = base[base$exon_number == max ( unique ( base$exon_number) ), ],  
+             aes(label =  tpm_total, x = max ( unique ( base$exon_number) ), y = value, hjust = 1),  
+             color="red", size=5, 
+             box.padding = 0.5, max.overlaps = Inf
+             )
+             
 
 ### end test plot 
 
