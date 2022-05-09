@@ -5917,7 +5917,7 @@ tab.fusion.frame %>%  dplyr::group_by(frameness)  %>%    dplyr::summarise(
 ```{r}
 # 5.4.2022 adding exon counts 
 
-exon = readRDS( '/data/SUMMARY/EXON_COUNT/exon_counts_correlations.rds')
+exon = readRDS( '/data/SUMMARY/EXON_COUNT/exon_counts_correlations2.rds')
 exon_cor = exon$corr
 exon_tpm = exon$data
 rm ( exon )
@@ -5949,9 +5949,12 @@ colSums(   exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "
 
 
 #### plot top against median 
-t="ENST00000269305.8"
+t="ENST00000269305.8" # tp53
+#t="ENST00000244741.9"
+samples = c( "AA3", "AJ10", "Z12", "K2")
+#samples = c( "BK3")
 
-base = melt ( exon_tpm[ exon_tpm$transcript_id == t,  c ( "median", "exon_number", "gene_name", c( "AA3", "AJ10", "Z12", "K2") ) ] 
+base = melt ( exon_tpm[ exon_tpm$transcript_id == t,  c ( "median", "exon_number", "gene_name", samples ) ] 
               , id = c("exon_number", "gene_name" ) 
               )
 
@@ -5998,11 +6001,11 @@ total = total - 1
 }
 
 exon_tab = exon_tab[order ( exon_tab$value), ]
-
+exon_tab2 = exon_tab[complete.cases(exon_tab), ]
 
 for ( g in tsg.onco$gene ){
 
-g =   exon_tab[exon_tab$gene == g, ]
+g =   exon_tab2[exon_tab2$gene == g, ]
 
 if ( nrow ( g ) > 0 ){  
 
@@ -6040,6 +6043,11 @@ plot ( gp )
   
 }
 
+
+
+# find exons that are different BUT overall tpm are the same? 
+
+singleExon = readRDS( '/data/SUMMARY/EXON_COUNT/tpm_normalzied_by_exons.rds')
 
 
 ```
