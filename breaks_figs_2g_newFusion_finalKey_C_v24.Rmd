@@ -5942,10 +5942,39 @@ tp53= tp53 [ !duplicated ( tp53$tube), ]
 #tp53 = tp53[tp53$tube %in% trueseq.key$RNAseq.id,]
 
 # test 
-exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "AJ10", "Z12", "K2")]
+exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "AJ10", "Z12", "K2", "median")]
 
-colSums(   exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "AJ10", "Z12", "K2")]
+colSums(   exon_tpm[ exon_tpm$transcript_id == "ENST00000269305.8",  c( "AA3", "AJ10", "Z12", "K2") ]
  )
+
+
+#### plot top against median 
+t="ENST00000269305.8"
+
+base = melt ( exon_tpm[ exon_tpm$transcript_id == t,  c ( "median", "exon_number", "gene_name", c( "AA3", "AJ10", "Z12", "K2") ) ] 
+              , id = c("exon_number", "gene_name" ) 
+              )
+
+base$g = ifelse ( base$variable == "median", 'base', 'study' ) 
+
+gp = ggplot(base, aes(x=exon_number , y=value, group= variable )) +
+  geom_line(aes(color=g))+
+  geom_point(aes(color=g, alpha=g), size=10) +
+  theme(legend.position="none",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=30),
+        axis.title.y     = element_text(size=30), 
+        legend.text      =element_text(size=12)
+        , plot.title = element_text(size = 30, face = "bold")
+  ) + scale_color_manual(values = c(base="#367699", study="grey")) +
+  scale_alpha_manual( values = c(base=.9, study=.5) ) + ggtitle ( base$gene_name[1] )
+
+### end test plot 
+
+
+
 
 
 exon_tab = data.frame ()
