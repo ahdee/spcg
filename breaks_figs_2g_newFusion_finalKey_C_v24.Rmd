@@ -683,9 +683,9 @@ kable( failed.df  , format = "html" , row.names = F, caption = "Reasons for Excl
 tally = data.frame ( 
   "Total" = nrow ( rna.key_failed ) + nrow ( rna.key)
   ,"PASSED QC" = nrow ( rna.key)
-  , "Total.Matched_WGS" = nrow ( rna.key[rna.key$WGS.id != "None", ])
+  ,"Failed QC" = nrow ( rna.key_failed )
+  , "Matched_WGS" = nrow ( rna.key[rna.key$WGS.id != "None", ])
   ,"Unique Patient" = nrow ( rna.key[!duplicated ( rna.key$patient.id), ] )
-  ,"Failed QC" = nrow ( failedqc )
   , "Fresh Frozen" = nrow ( rna.key[rna.key$parent.preservation == "FFT", ] )
   , "FFPE" = nrow ( rna.key[rna.key$parent.preservation == "FFPE", ] )
 
@@ -1267,7 +1267,7 @@ tally = rbind ( temp_rw, c ( "TOTAL", sum ( temp_rw$`RNA+WGS`), sum ( temp_rw$`R
 
 tall_multi = tally 
 
-kable( tally  , format = "html" , row.names = F, caption="multi.sample" ) %>% kable_classic(full_width = F, position = "center", ) %>% row_spec(row= nrow ( tally), bold = T, color = "black", background = "#c6c9cf")
+kable( tall_multi  , format = "html" , row.names = F, caption="multi.sample" ) %>% kable_classic(full_width = F, position = "center", ) %>% row_spec(row= nrow ( tally), bold = T, color = "black", background = "#c6c9cf")
 
 multi_t1 <- ggtexttable(tall_multi, rows = NULL, theme = ttheme("blank")) %>%
   tab_add_hline(at.row = c( 1:2, nrow ( tall_multi) + 1) , row.side = "top", linewidth = 2) %>% table_cell_bg( row = nrow ( tall_multi)+1, column = 1:ncol(tall_multi), linewidth = 5, fill="#d7d7d9", color = "#d7d7d9") %>%
@@ -5764,7 +5764,7 @@ fuse.by.sample.type = fuse2[! ( fuse2$sample.type %in% c ("Chloroma"  ,"Unknown"
 
 
 ### now plot by classification 
-
+### hold
 fuse.by.class = fuse2[fuse2$sample.classification != "Unknown", ]  %>% dplyr::group_by(sample.classification, RNAseq.id) %>%
   dplyr::summarise(
     Total = n()  
@@ -6033,7 +6033,7 @@ base = exon_tpm[ exon_tpm$transcript_id == t,  c ( "median", "exon_number", "gen
 base = melt ( base, id = c("exon_number", "gene_name" ) ) 
 base$g = ifelse ( base$variable == "median", 'base', 'study' ) 
 
-gp = ggplot(base, aes(x=exon_number , y=value, group= variable )) +
+gp = ggplot(base, aes(x=factor ( exon_number) , y=value, group= variable )) +
   geom_line(aes(color=g))+
   geom_point(aes(color=g, alpha=g), size=10) +
    theme(legend.position="none",  legend.key = element_blank(),
@@ -6045,7 +6045,7 @@ gp = ggplot(base, aes(x=exon_number , y=value, group= variable )) +
         legend.text      =element_text(size=12)
         , plot.title = element_text(size = 30, face = "bold")
   ) + scale_color_manual(values = c(base="#367699", study="grey")) +
-  scale_alpha_manual( values = c(base=.9, study=.5) ) + ggtitle ( base$gene_name[1] )
+  scale_alpha_manual( values = c(base=.9, study=.5) ) + ggtitle ( paste (  t, base$gene_name[1] )  )
 
 plot ( gp )
 
@@ -6057,11 +6057,15 @@ plot ( gp )
 
 
 
+
+
+
+```
+
+```{r}
 # find exons that are different BUT overall tpm are the same? 
 
 singleExon = readRDS( '/data/SUMMARY/EXON_COUNT/tpm_normalzied_by_exons.rds')
-
-
 ```
 
 
@@ -12782,10 +12786,219 @@ return ( list ( plot = m1, df = coef ) )
 
 ```
 
+```{r}
+# updated 5.11.2022
+compute_longi <- function (dff , annt = NA ) {
+  
+if ( !is.na ( annt) ){
+  dff$fusion = dff[[annt]]
+}  
+  
+  
+  
 
+
+longi.key_work = rna.key[ rna.key$patient.id %in% key.long$patient.id, 
+                            c ( "patient.id" ,"temporal.order" ,"cancer.subtype", "sample.classification" ,"treatment"  ,  "WGS.id" , "RNAseq.id" ) ]
+
+# order by disease, then by temporal order 
+longi.key_work$temporal.order = as.numeric(longi.key_work$temporal.order)
+longi.key_work = longi.key_work[ order ( longi.key_work$cancer.subtype, longi.key_work$patient.id,  longi.key_work$temporal.order), ]
+head ( longi.key_work )
+
+# lets get samples that only have temporal orders 
+temporal = c()
+for ( tu in unique ( longi.key_work$patient.id)){
+  t = unique ( longi.key_work[longi.key_work$patient.id == tu, ]$temporal.order )
+  if ( length ( t ) > 1  ){
+    temporal = c( temporal, tu  )
+  }
+}
+
+# only include samples that have temporal ordering
+
+temporal.key = longi.key_work[ longi.key_work$patient.id %in% temporal, ]
+
+
+## get total fusion for each sample 
+tfusion_long = dff %>% dplyr::group_by(RNAseq.id) %>%
+  dplyr::summarise(
+    total_fusion = n()  
+    
+  ) %>%  data.frame ( stringsAsFactors = F )
+
+
+
+
+fusion_total2 = merge ( tfusion_long, temporal.key[ , c("patient.id", "cancer.subtype", "temporal.order", "RNAseq.id")] ,by ="RNAseq.id", all.x =F, all.y=T )
+fusion_total2 = fusion_total2[ order ( fusion_total2$cancer.subtype, fusion_total2$patient.id,  fusion_total2$temporal.order) , ]
+fusion_total2[is.na(fusion_total2)] <- 0 
+fusion_total2$temporal.order = as.character (fusion_total2$temporal.order)
+
+
+## here be dragons 
+fusion_total2 = fusion_total2[fusion_total2$patient.id != "40", ]
+
+
+
+
+# change all first sample to 1 
+fusion_total2$temporal.order = as.numeric ( fusion_total2$temporal.order )
+
+for ( p in unique ( fusion_total2$patient.id)){
+  m = min ( fusion_total2[ fusion_total2$patient.id == p, ]$temporal.order) 
+  fusion_total2[ fusion_total2$patient.id == p & fusion_total2$temporal.order == m , ]$temporal.order  = 1 
+}
+
+
+# remove all middle samples. 
+fusion_total2$temporal.order = ifelse ( fusion_total2$temporal.order == 1, 1, 2 )
+fusion_total2 = fusion_total2 [ order ( fusion_total2$patient.id, fusion_total2$temporal.order, -fusion_total2$total_fusion), ]
+fusion_total2 = fusion_total2[ ! duplicated ( paste ( fusion_total2$patient.id, fusion_total2$temporal.order) ), ]
+
+# median center all total 
+
+long_total_fusion = fusion_total2  %>% 
+  dplyr::group_by(patient.id, temporal.order ) %>% 
+  dplyr::mutate(
+    total_fusion = median(total_fusion)
+  ) %>% 
+  ggplot( . , aes(x = temporal.order, y = total_fusion, color = cancer.subtype, group = patient.id)) + 
+  geom_point(size=6 , alpha = 0.75    ) + geom_line() + ylab(" log2(cpm)")+ xlab("temporal.order: RNA-seq") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))  +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 12 ),
+        axis.text.x = element_text(angle = 0, size= 12 ),
+        axis.title.x = element_text(size=18),
+        
+        axis.title.y     = element_text(size=18), 
+        legend.text      =element_text(size=12)
+  ) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black"))+ scale_color_manual(values= subcolor) +
+  facet_wrap(   cancer.subtype ~. , scale="free") +   scale_x_continuous(  breaks=c(1, 2) ) +
+  scale_y_continuous(limits = c(0, NA) )
+
+
+### create dataframe for heatmaps
+
+long_out = data.frame ()
+long_info = list ()
+
+for ( tu in unique ( fusion_total2$patient.id)){
+  t = fusion_total2 [ fusion_total2$patient.id == tu, ]
+  tmin = min ( t$temporal.order ) 
+  tmax = max  ( t$temporal.order)
+  
+  tmin = fusion_total2 [ fusion_total2$patient.id == tu & fusion_total2$temporal.order == tmin, ]
+  tmax = fusion_total2 [ fusion_total2$patient.id == tu & fusion_total2$temporal.order == tmax, ]
+  
+  tprimary = dff[dff$RNAseq.id == tmin$RNAseq.id[1], ] 
+  tsecondary = dff[dff$RNAseq.id == tmax$RNAseq.id[1], ] 
+  
+  primary_only = setdiff ( tprimary$fusion, tsecondary$fusion)
+  secondary_only =  setdiff (  tsecondary$fusion, tprimary$fusion )
+  both = intersect(  tsecondary$fusion, tprimary$fusion  )
+  
+  long_info[[tu]] = c("primary_only"= toString( primary_only), "secondary_only"=toString(secondary_only), "both"=toString(both) )
+  
+
+  
+  long_out = rbind ( long_out, data.frame ( pid = tu
+                                            , cancer.subtype = t$cancer.subtype[1]
+                                            , primary_only = length ( primary_only )
+                                            , secondary_only = length ( secondary_only )
+                                            , shared= length ( both ) 
+  ) )
+  
+  
+  
+}
+
+
+# rehash details into a dataframe
+long_details = data.frame()
+for ( n in names ( long_info)){
+  
+  info_temp = long_info[[n]]
+  
+  data.frame ( 
+    
+    )
+  
+}
+
+# sanity check, need to 2x intersect
+# this summation shoud equal aboe 
+p = 10
+sum ( as.numeric ( long_out[long_out$pid %in% c(p), c(3:4) ] ) , as.numeric ( long_out[long_out$pid %in% c(p), c(5) ] * 2  ) )-
+sum ( fusion_total2 [fusion_total2$patient.id == p, ]$total_fusion )
+
+
+long_out = data.frame ( t ( long_out ))
+# get disease and pid orders, sine these will be removed later 
+diseaseorder = as.character ( long_out[2, ] ) 
+pidorder = as.character( long_out[ 1, ])
+long_out = long_out[ - c( 1,2), ]
+# make into numeric 
+long_out[] <- lapply(long_out, function(x) {as.numeric(as.character(x)) } ) 
+
+colnames ( long_out) = paste0( diseaseorder, "_", pidorder )
+
+
+cm2 <- apply(long_out, 2,  function(x) (x - mean(x)) / sd(x)) 
+cm2 <- data.frame ( cm2 )
+
+cm2 <-  cm2 %>% select_if(~all(!is.na(.))) 
+
+
+ht_long_fusion <- ComplexHeatmap::Heatmap(  data.matrix( cm2 ) 
+                          ,  name = ' '
+                          , row_order = c( "primary_only", "shared", "secondary_only")
+                          #, column_order = colnames ( long_out)
+                          #, show_row_dend = T
+                          #, show_column_names = F
+                          #, show_row_names = F
+                          #, name= heat.title
+                          #,column_split = km2
+                          #,top_annotation = topannt
+                          #, col = pals::brewer.rdylbu(25) 
+                          , col =  colorRampPalette(rev(brewer.pal(n = 7, name ="RdYlBu")))(25)
+                          #, cluster_columns = sort ( dend2$dend , decreasing = T)
+                          #, column_split = 2
+                          #, cluster_rows  = dend_gene$dend 
+                          #, row_split = 7
+                          #,row_title = NULL
+                          #,column_title = NULL
+                          ,show_heatmap_legend = T
+                          , row_names_gp = grid::gpar(fontsize = 28) 
+                          ,heatmap_legend_param = list(at = c(-2, 0, 2), labels = c("low", "medium", "high"),  labels_gp = gpar(col = c("#4575B4", "#E3E31F", "#D73027"), fontsize = 14)   
+                                                       , legend_height = unit(6, "cm") , legend_width = unit(2, "cm")
+                                                       ) 
+                          
+)
+
+
+
+return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_total_fusion, temporal.key=temporal.key ))
+
+
+}
+
+fuse_longout = compute_longi( fusion )
+outUP_longout = compute_longi( out[ out$both == "OUTLIER_HIGH" & out$gene %in%  genelist$gene, ] , "gene" )
+
+
+
+
+
+```
 
 
 ```{r}
+# older logititudinal 
 # now we get to longitudanal stuff! 
 longi.key = trueseq.key[duplicated(trueseq.key$patient.id), ]$patient.id 
 longi.key = trueseq.key[trueseq.key$patient.id %in% longi.key, ]
