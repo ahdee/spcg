@@ -5750,6 +5750,9 @@ fuse.by.treatment = ggplot( fuse.by.treatment  , aes(y=Total, x=treatment))+
 fuse.by.treatment = ggpval:: add_pval(fuse.by.treatment, pairs = list(c(1, 2)), test='wilcox.test')
 
 
+
+
+
 fuse.by.sample.type = fuse2[! ( fuse2$sample.type %in% c ("Chloroma"  ,"Unknown" ) ), ]  %>% dplyr::group_by(sample.type, RNAseq.id, cancer.subtype) %>%
   dplyr::summarise(
     Total = n()  
@@ -12787,6 +12790,15 @@ return ( list ( plot = m1, df = coef ) )
 ```
 
 ```{r}
+
+fusion_mod = temp.all
+fusion_mod$patient.id = as.character ( sapply ( fusion_mod$RNAseq.id, function (x) rna.key[rna.key$RNAseq.id == x, ]$patient.id))
+# correct diagnostics 
+fusion_mod$type = ifelse ( fusion_mod$type == "is.diag" & fusion_mod$frameness != "in.frame", "is.novel", fusion_mod$type )
+fusion_mod$type = ifelse ( fusion_mod$type == "is.drug" & fusion_mod$frameness != "in.frame", "is.novel", fusion_mod$type )
+
+
+
 # updated 5.11.2022, new longtudinal analysis
 compute_longi <- function (dff , annt = NA ) {
   
@@ -12999,8 +13011,8 @@ return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_
 
 }
 
-fuse_longout = compute_longi( fusion )
-outUP_longout = compute_longi( out[ out$both == "OUTLIER_HIGH" & out$gene %in%  genelist$gene, ] , "gene" )
+fuse_longout = compute_longi(  fusion_mod  )
+outUP_longout = compute_longi( up.all_qc[ up.all_qc$both == "OUTLIER_HIGH" & up.all_qc$gene %in%  genelist$gene, ] , "gene" )
 
 temp = data.frame ( table ( outUP_longout$long_info_details [ outUP_longout$long_info_details$type == "secondary_only", ]$info ) )
 temp = temp [ order( -temp$Freq), ]
@@ -13011,7 +13023,7 @@ temp = temp [ order( -temp$Freq), ]
 
 # 
 tkey = outUP_longout$modkey
-gene = "PHOX2B"
+gene = "NONO"
 gene.tpm = reshape2::melt ( tpm[tpm$gene == gene, tkey$RNAseq.id] )
 colnames ( gene.tpm ) = c("RNAseq.id", "tpm")
 
@@ -13048,6 +13060,65 @@ gene.tpm  %>%
   facet_wrap(   cancer.subtype ~. ) 
 
 #############
+
+
+## study longitudinal for fusion 
+psb_fusions = merge ( fuse_longout$long_info_details , fusion_mod, by.x = c("pid","info"), by.y=c ( "patient.id", "fusion") )
+psb_fusions = psb_fusions[psb_fusions$RNAseq.id %in% fuse_longout$modkey$RNAseq.id, ]
+psb_fusions$is.cancer = ifelse ( psb_fusions$right %in% genelist$gene , "yes", "no" )
+psb_results1 = as.data.frame.matrix ( as.matrix ( table ( psb_fusions[ , c("type.x", "type.y")]) ) )
+# shared needs to be divided by 2 so that it does not count twice 
+
+psb_results1[which ( row.names ( psb_results1) == "both") , ] = psb_results1[which ( row.names ( psb_results1) == "both") , ] / 2
+
+psb_results1$total = as.numeric ( rowSums(psb_results1) )
+
+row.names ( psb_results1)[which ( row.names(psb_results1) == "both" ) ]  = "shared"
+
+kable( psb_results1[c("primary_only", "shared", "secondary")  , ] , format = "html" , row.names = T, caption="", table.attr = "style='width:40%;'" ) %>% 
+  kable_classic(full_width = F, position = "center", )  %>%
+    column_spec(1, bold = T, border_right = T) 
+
+tally = data.frame ( table ( psb_fusions[ , c("type.x", "is.cancer")]) ) 
+
+ make.pie( tally[ tally$is.cancer == "yes", ]
+                , name.first="3' Gene"
+                , cc = c("#8be386" ,"#eb4034", "#79c4d1" )
+                , leg.pos = "bottom"
+                , title = "3' gene is Cancer"
+                )
+
+# worth mentioning 
+psb_fusions$left = gsub ( "-.*$", '', psb_fusions$info)
+
+## shared 
+long_fusion_ofInt = psb_fusions [ (psb_fusions$type.x == "both" & psb_fusions$is.cancer == "yes" | psb_fusions$type.y == "is.diag") & psb_fusions$left != psb_fusions$right , ]
+long_fusion_ofInt=long_fusion_ofInt[ order ( long_fusion_ofInt$type.y), ]
+kable ( long_fusion_ofInt[!duplicated ( paste(long_fusion_ofInt$pid, long_fusion_ofInt$info )) , c("pid", "info","cancer.subtype", "type.y")], format="html", row.names=F, table.attr = "style='width:40%;'" ) %>%
+  kable_classic(full_width = F, position = "center", )  %>%
+    column_spec(1, bold = T, border_right = T) 
+
+## secondary 
+
+long_fusion_ofInt = psb_fusions [ (psb_fusions$type.x == "secondary_only" & psb_fusions$is.cancer == "yes" & psb_fusions$frameness == "in.frame" | psb_fusions$type.y == "is.obsv") & psb_fusions$left != psb_fusions$right , ]
+long_fusion_ofInt=long_fusion_ofInt[ order ( long_fusion_ofInt$type.y), ]
+kable ( long_fusion_ofInt[!duplicated ( paste(long_fusion_ofInt$pid, long_fusion_ofInt$info )) , c("pid", "info","cancer.subtype", "type.y")], format="html", row.names=F, table.attr = "style='width:40%;'" ) %>%
+  kable_classic(full_width = F, position = "center", )  %>%
+    column_spec(1, bold = T, border_right = T) 
+
+
+
+
+
+prime_fusion_only = fuse_longout$long_info_details [fuse_longout$long_info_details$type == "primary_only", ]
+prime_fusion_only = merge ( prime_fusion_only, fusion_mod, by.x = c("pid","info"), by.y=c ( "patient.id", "fusion") )
+
+secondary_fusion_only = fuse_longout$long_info_details [fuse_longout$long_info_details$type == "secondary_only", ]
+secondary_fusion_only = merge ( secondary_fusion_only, fusion_mod, by.x = c("pid","info"), by.y=c ( "patient.id", "fusion") )
+
+both_fusion_only = fuse_longout$long_info_details [fuse_longout$long_info_details$type == "both", ]
+both_fusion_only = merge ( both_fusion_only, fusion_mod, by.x = c("pid","info"), by.y=c ( "patient.id", "fusion") )
+
 
 ```
 
