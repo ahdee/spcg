@@ -12787,7 +12787,7 @@ return ( list ( plot = m1, df = coef ) )
 ```
 
 ```{r}
-# updated 5.11.2022
+# updated 5.11.2022, new longtudinal analysis
 compute_longi <- function (dff , annt = NA ) {
   
 if ( !is.na ( annt) ){
@@ -12885,7 +12885,7 @@ long_total_fusion = fusion_total2  %>%
 ### create dataframe for heatmaps
 
 long_out = data.frame ()
-long_info = list ()
+long_info = data.frame()
 
 for ( tu in unique ( fusion_total2$patient.id)){
   t = fusion_total2 [ fusion_total2$patient.id == tu, ]
@@ -12902,9 +12902,21 @@ for ( tu in unique ( fusion_total2$patient.id)){
   secondary_only =  setdiff (  tsecondary$fusion, tprimary$fusion )
   both = intersect(  tsecondary$fusion, tprimary$fusion  )
   
-  long_info[[tu]] = c("primary_only"= toString( primary_only), "secondary_only"=toString(secondary_only), "both"=toString(both) )
+  #long_info[[tu]] = c("primary_only"= toString( primary_only), "secondary_only"=toString(secondary_only), "both"=toString(both) )
   
+    for ( p in primary_only ){
+    long_info= rbind ( long_info, data.frame ( pid=tu, type="primary_only", info = p ) )
+    }
+  
+  for ( p in secondary_only ){
+    long_info= rbind ( long_info, data.frame ( pid=tu, type="secondary_only", info = p ) )
+  }
 
+  for ( p in both ){
+    long_info= rbind ( long_info, data.frame ( pid=tu, type="both",info =  p ) )
+  }
+
+  
   
   long_out = rbind ( long_out, data.frame ( pid = tu
                                             , cancer.subtype = t$cancer.subtype[1]
@@ -12990,8 +13002,8 @@ return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_
 fuse_longout = compute_longi( fusion )
 outUP_longout = compute_longi( out[ out$both == "OUTLIER_HIGH" & out$gene %in%  genelist$gene, ] , "gene" )
 
-
-
+temp = data.frame ( table ( outUP_longout$long_info_details [ outUP_longout$long_info_details$type == "secondary_only", ]$info ) )
+temp = temp [ order( -temp$Freq), ]
 
 
 ```
