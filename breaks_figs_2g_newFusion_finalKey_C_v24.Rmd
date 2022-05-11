@@ -12994,7 +12994,7 @@ ht_long_fusion <- ComplexHeatmap::Heatmap(  data.matrix( cm2 )
 
 
 
-return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_total_fusion, temporal.key=temporal.key ))
+return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_total_fusion, temporal.key=temporal.key , modkey =fusion_total2  ))
 
 
 }
@@ -13005,6 +13005,49 @@ outUP_longout = compute_longi( out[ out$both == "OUTLIER_HIGH" & out$gene %in%  
 temp = data.frame ( table ( outUP_longout$long_info_details [ outUP_longout$long_info_details$type == "secondary_only", ]$info ) )
 temp = temp [ order( -temp$Freq), ]
 
+
+## Examples of how to draw a gene with modified longi key outputed from compute_longi 
+###
+
+# 
+tkey = outUP_longout$modkey
+gene = "PHOX2B"
+gene.tpm = reshape2::melt ( tpm[tpm$gene == gene, tkey$RNAseq.id] )
+colnames ( gene.tpm ) = c("RNAseq.id", "tpm")
+
+gene.tpm = merge ( gene.tpm, tkey[ , c("patient.id", "cancer.subtype", "temporal.order", "RNAseq.id")] ,by ="RNAseq.id" )
+gene.tpm = gene.tpm[ order ( gene.tpm$cancer.subtype, gene.tpm$patient.id,  gene.tpm$temporal.order) , ]
+gene.tpm$tpm = log2 ( gene.tpm$tpm + 1 )
+gene.tpm$temporal.order = as.character (gene.tpm$temporal.order)
+# plot by samples 
+
+
+gene.tpm  %>% 
+  dplyr::group_by(patient.id, temporal.order ) %>% 
+  dplyr::mutate(
+    tpm = mean(tpm)
+  ) %>% dplyr::group_by(patient.id) %>%
+  #  dplyr::mutate(
+  #               coef = summary ( lm ( tpm   ~  temporal.order ))$coef[2],
+  #              ) %>% 
+  ggplot( . , aes(x = temporal.order, y = tpm, color = cancer.subtype, group = patient.id)) + 
+  geom_point(size=6 , alpha = 0.75    ) + geom_line() + ylab(" log2(cpm)")+ xlab("temporal.order: RNA-seq") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))  +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 12 ),
+        axis.text.x = element_text(angle = 0, size= 12 ),
+        axis.title.x = element_text(size=18),
+        
+        axis.title.y     = element_text(size=18), 
+        legend.text      =element_text(size=12)
+  ) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black"))+ scale_color_manual(values= subcolor) +
+  facet_wrap(   cancer.subtype ~. ) 
+
+#############
 
 ```
 
