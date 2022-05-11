@@ -5718,11 +5718,19 @@ tab.fusion
 
 ```{r}
 # now lets study the fusions a bit more get more of the biology !
-# first are there any diffrences between treated and untreated in terms of numbers of fusion and types! 
-#fuse2 = merge ( fuse1[fuse1$frameness == "in.frame", ], rna.key[ , c("sex","sample.type" , "treatment","RNAseq.id")] , by="RNAseq.id")
-fuse2 = merge ( fuse1, rna.key[ , c("sex","sample.type" , "treatment","RNAseq.id", "sample.classification")] , by="RNAseq.id")
-fuse2$sample.type = gsub ( ".*_", "", fuse2$sample.type  )
 
+# 5.11.2022 remove this line and use fusion_mod instead which has since fixed the type to is.diag
+
+#fuse2 = merge ( fuse1, rna.key[ , c("sex","sample.type" , "treatment","RNAseq.id", "sample.classification")] , by="RNAseq.id")
+
+fuse2 = temp.all
+fuse2$patient.id = as.character ( sapply ( fuse2$RNAseq.id, function (x) rna.key[rna.key$RNAseq.id == x, ]$patient.id))
+# correct diagnostics 
+fuse2$type = ifelse ( fuse2$type == "is.diag" & fuse2$frameness != "in.frame", "is.novel", fuse2$type )
+fuse2$type = ifelse ( fuse2$type == "is.drug" & fuse2$frameness != "in.frame", "is.novel", fuse2$type )
+
+fuse2 = merge ( fuse2, rna.key[ , c("sex","sample.type" , "treatment","RNAseq.id", "sample.classification")] , by="RNAseq.id")
+fuse2$sample.type = gsub ( ".*_", "", fuse2$sample.type  )
 # get total by treatment and disease then plot 
 fuse.by.treatment = fuse2[fuse2$treatment != "Unknown", ]  %>% dplyr::group_by(treatment, RNAseq.id) %>%
   dplyr::summarise(
@@ -5750,7 +5758,10 @@ fuse.by.treatment = ggplot( fuse.by.treatment  , aes(y=Total, x=treatment))+
 fuse.by.treatment = ggpval:: add_pval(fuse.by.treatment, pairs = list(c(1, 2)), test='wilcox.test')
 
 
+### tabulate 
 
+ 
+ 
 
 
 fuse.by.sample.type = fuse2[! ( fuse2$sample.type %in% c ("Chloroma"  ,"Unknown" ) ), ]  %>% dplyr::group_by(sample.type, RNAseq.id, cancer.subtype) %>%
