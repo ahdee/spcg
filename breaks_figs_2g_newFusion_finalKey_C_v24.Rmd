@@ -13193,9 +13193,8 @@ psb_fusions = psb_fusions[psb_fusions$RNAseq.id %in% fuse_longout$modkey$RNAseq.
 psb_fusions$is.cancer = ifelse ( psb_fusions$right %in% genelist$gene , "yes", "no" )
 psb_results1 = as.data.frame.matrix ( as.matrix ( table ( psb_fusions[ , c("type.x", "type.y")]) ) )
 # shared needs to be divided by 2 so that it does not count twice 
-
-psb_results1[which ( row.names ( psb_results1) == "both") , ] = psb_results1[which ( row.names ( psb_results1) == "both") , ] / 2
-
+# dont divide by two - just because its shared does not mean it needs to be counted only once. 
+psb_results1[which ( row.names ( psb_results1) == "both") , ] = psb_results1[which ( row.names ( psb_results1) == "both") , ] 
 psb_results1$total = as.numeric ( rowSums(psb_results1) )
 
 row.names ( psb_results1)[which ( row.names(psb_results1) == "both" ) ]  = "shared"
