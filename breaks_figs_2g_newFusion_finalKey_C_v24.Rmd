@@ -3403,7 +3403,7 @@ kable( fusion_tally , format = "html" , row.names = F, caption="", table.attr = 
            )
 
 ### fusion_tally 
-fuse_tally_tbl <- ggtexttable(fusion_tally, rows = NULL, theme = ttheme("light") ) %>%
+fuse_tally_tbl <- ggtexttable(fusion_tally[, 1:10], rows = NULL, theme = ttheme("light") ) %>%
   tab_add_hline(at.row = c( 1:2) , row.side = "top", linewidth = 2) %>%
   tab_add_vline(at.column = 2, column.side = "left", from.row = 2, linetype =1) %>%
   tab_add_footnote(text = "CS: Cancer Subtype
@@ -3476,17 +3476,78 @@ fusion_percent = ggplot( temp, aes( x=fuse,y=fusion_positive)) +
         axis.ticks.x=element_blank()
         #, axis.ticks.y=element_blank()
         #, axis.text.y=element_blank()
-        , legend.position = "none"
+        , legend.position = "bottom"
         , axis.text.y = element_text(size= 22 )
         , axis.title.y     = element_text(size=22)
+        , legend.title = element_blank()
   ) + 
 
   geom_hline(yintercept=q[2], linetype="dashed", 
              color = "grey", size=2) +
   geom_hline(yintercept=q[4], linetype="dashed", 
-             color = "grey", size=2)
+             color = "grey", size=2) + ggtitle ( "Cancer Subtype")
 
 
+## add percent of cancer_type
+# # sanity check this should equal above by percent 
+total_type =   rna.key[!duplicated ( rna.key$patient.id), ] %>% group_by(   cancer.subtype  )  %>%
+    dplyr::summarise  (
+      total.patient = n () ) %>%
+    data.frame ( stringsAsFactors = F )
+
+fusion.reclass_type = merge ( fusion.reclass[, c("RNAseq.id", "fusion", "frameness")], rna.key [ , c("RNAseq.id", "cancer.subtype", "patient.id")], by="RNAseq.id")
+fusion.reclass_type = fusion.reclass_type[!duplicated ( fusion.reclass_type$patient.id), ]
+fusion.reclass_type = merge ( fusion.reclass_type, total_type, by="cancer.subtype")
+
+fusion.reclass_type %>% dplyr:: group_by (cancer.subtype,total.patient) %>% dplyr::summarise ( pct.pos = n() ) %>%  mutate( round ( pct.pos /total.patient,2 ) )
+
+# redo again with cancer.typ 
+
+cancer.type_color = c( "Leukemia"='#b54536', Solid = "#333232", CNS='#bf9c43' )
+
+ total_type =   rna.key[!duplicated ( rna.key$patient.id), ] %>% group_by(   cancer.type  )  %>%
+    dplyr::summarise  (
+      total.patient = n () ) %>%
+    data.frame ( stringsAsFactors = F )
+
+fusion.reclass_type = merge ( fusion.reclass[, c("RNAseq.id", "fusion", "frameness")], rna.key [ , c("RNAseq.id", "cancer.type", "patient.id")], by="RNAseq.id")
+fusion.reclass_type = fusion.reclass_type[!duplicated ( fusion.reclass_type$patient.id), ]
+fusion.reclass_type = merge ( fusion.reclass_type, total_type, by="cancer.type")
+
+fusion_pct_cancerType  = fusion.reclass_type %>% dplyr:: group_by (cancer.type,total.patient) %>% dplyr::summarise ( pct.pos = n() ) %>%  mutate( fusion_positive = round ( pct.pos /total.patient,2 ) ) %>%
+   ggplot( ., aes( x=1,y=fusion_positive)) +
+  #geom_violin()+ 
+  geom_jitter(shape=19, position=position_jitter(0.0), aes( colour=cancer.type), size=10, alpha = 0.9  ) + 
+ # scale_color_manual(values= subcolor ) +
+  theme(
+    
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  )  + ylab("Percent Fusion") +
+  
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  xlab("") + 
+  scale_colour_manual(values= cancer.type_color ) +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()
+        #, axis.ticks.y=element_blank()
+        #, axis.text.y=element_blank()
+        , legend.position = "bottom"
+        , axis.text.y = element_text(size= 22 )
+        , axis.title.y     = element_text(size=22)
+        , legend.title = element_blank()
+  ) + ggtitle ( "Cancer Type")
+
+
+lay2 = "AAAAABBBBBBBBB"
+
+fusion_pct_cancerType + ( fusion_percent + ylab('') ) + plot_layout(design = lay2)
+
+  
 
 ```
 
@@ -13264,7 +13325,7 @@ psb_fusions$left = gsub ( "-.*$", '', psb_fusions$info)
 ## shared 
 long_fusion_ofInt = psb_fusions [ (psb_fusions$type.x == "both" & psb_fusions$is.cancer == "yes" | psb_fusions$type.y == "is.diag") & psb_fusions$left != psb_fusions$right , ]
 long_fusion_ofInt=long_fusion_ofInt[ order ( long_fusion_ofInt$type.y), ]
-kable ( long_fusion_ofInt[!duplicated ( paste(long_fusion_ofInt$pid, long_fusion_ofInt$info )) , c("pid", "info","cancer.subtype", "type.y")], format="html", row.names=F, table.attr = "style='width:40%;'" ) %>%
+kable ( long_fusion_ofInt[!duplicated ( paste(long_fusion_ofInt$pid, long_fusion_ofInt$info )) , c("pid", "info","cancer.subtype", "type.y")], format="html", row.names=F, table.attr = "style='width:40%;'" ) %>% 
   kable_classic(full_width = F, position = "center", )  %>%
     column_spec(1, bold = T, border_right = T) 
 
