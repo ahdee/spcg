@@ -101,6 +101,7 @@ library(DiagrammeR)
 library(magrittr)
 library(DiagrammeRsvg)
 
+source ( "draw.p.R")
 
 # library ( conflicted)
 print.it = 1
@@ -13202,6 +13203,11 @@ row.names ( psb_results1)[which ( row.names(psb_results1) == "both" ) ]  = "shar
 kable( psb_results1[c("primary_only", "shared", "secondary")  , ] , format = "html" , row.names = T, caption="", table.attr = "style='width:40%;'" ) %>% 
   kable_classic(full_width = F, position = "center", )  %>%
     column_spec(1, bold = T, border_right = T) 
+
+# plot total by type  
+
+psb_fusions %>% group_by(type.x, pid) %>% summarise ( TotalbyType = n())
+
 
 tally = data.frame ( table ( psb_fusions[ , c("type.x", "is.cancer")]) ) 
 
