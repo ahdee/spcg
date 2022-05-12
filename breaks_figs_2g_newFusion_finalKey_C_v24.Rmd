@@ -5872,9 +5872,9 @@ class_type_cancer  = ggplot( tally  , aes(x=sample.classification , y=Freq, fill
   ) + coord_flip() + scale_fill_manual(values= is_cancer_ccc  )
 
 
+(class_type_stack + class_type_cancer) /
+(treat_type_stack + treat_type_cancer)
 
-(treat_type_stack + treat_type_cancer)/
-(class_type_stack + class_type_cancer)
 
 
 fuse.by.sample.type = fuse2[! ( fuse2$sample.type %in% c ("Chloroma"  ,"Unknown" ) ), ]  %>% dplyr::group_by(sample.type, RNAseq.id, cancer.subtype) %>%
@@ -5916,7 +5916,9 @@ fuse.by.class_plot = ggplot( fuse.by.class  , aes(y=Total, x=sample.classificati
   ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") + xlab ( "") +  ylab ( "") +
    scale_fill_manual(values = unique (brewer.pal(7, "Accent") ))  #+ ylim(0,max ( fuse.by.treatment$Total))  #+ facet_wrap(cancer.subtype~., ncol=3)
 
-fuse.by.class_plot = ggpval::add_pval(fuse.by.class_plot, pairs = list(c(1, 2)), test='wilcox.test')
+fuse.by.class_plot = ggpval::add_pval(fuse.by.class_plot, pairs = list(c(1, 2)), test='wilcox.test', textsize=20)
+
+
 
 ####
 
