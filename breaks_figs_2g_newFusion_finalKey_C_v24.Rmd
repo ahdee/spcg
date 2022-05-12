@@ -13205,8 +13205,32 @@ kable( psb_results1[c("primary_only", "shared", "secondary")  , ] , format = "ht
     column_spec(1, bold = T, border_right = T) 
 
 # plot total by type  
+temps = psb_fusions
+temps$type.x = gsub ( "both", "shared", temps$type.x )
+temps$type.x  = factor ( temps$type.x , levels = c( "primary_only", "shared", "secondary_only" ))
+long_cmp_fusion <- temps %>% group_by(type.x, pid) %>% summarise ( TotalbyType = n()
+                                                                         #,type.x = factor(type.x, levels=c("primary_only", "both", "secondary_only"))
+                                                                         ) %>%
+ggplot( .  , aes(y=TotalbyType, x=type.x))+
+  geom_quasirandom(aes(fill = type.x ), size = 6, shape = 21, alpha = .5) +
+  theme_bw() +
+  xlab("") +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=22),
+        
+        axis.title.y     = element_text(size=22), 
+        legend.text      =element_text(size=12)
+  ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") + xlab ( "") +  ylab ( "") +
+  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") ))  #+ ylim(0,max ( fuse.by.treatment$Total))  #+ facet_wrap(cancer.subtype~., ncol=3)
 
-psb_fusions %>% group_by(type.x, pid) %>% summarise ( TotalbyType = n())
+## added post=2 to correct for pvalue
+long_cmp_fusion = my_add_pval(long_cmp_fusion, pairs = list(c(1, 2)  ), test='wilcox.test', post=2, textsize = 10)
+long_cmp_fusion = my_add_pval(long_cmp_fusion, pairs = list(c(2, 3)  ), test='wilcox.test', post=2, textsize = 10) 
+
+
 
 
 tally = data.frame ( table ( psb_fusions[ , c("type.x", "is.cancer")]) ) 
