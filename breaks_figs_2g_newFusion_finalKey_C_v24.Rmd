@@ -5758,10 +5758,123 @@ fuse.by.treatment = ggplot( fuse.by.treatment  , aes(y=Total, x=treatment))+
 fuse.by.treatment = ggpval:: add_pval(fuse.by.treatment, pairs = list(c(1, 2)), test='wilcox.test')
 
 
-### tabulate 
+#####  tabulate treatment
+
+fusion_type_ccc = setNames(brewer.pal(4, "Set3") , c("is.diag","is.drug","is.novel", "is.obsv"))
+fuse2$is.cancer = ifelse ( fuse2$right %in% genelist$gene , "yes", "no" )
+#fuse2$treatment = factor ( fuse2$treatment, c("Treated", "Naive", "Unknown")) 
+
+
+treat_type_stack=  fuse2[ fuse2$treatment != "Unknown", ]  %>% dplyr::group_by(treatment, type) %>%
+  dplyr::summarise(
+    Total = n()  
+  ) %>% 
+    ggplot( .  , aes(x=factor ( treatment, levels = c("Treated", "Naive") ) , y=Total, fill=type   )) +
+  geom_bar(position="fill", stat="identity")+
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ylab("") + 
+  xlab("") + 
+  theme(legend.position="none",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=12),
+        axis.title.y     = element_text(size=15), 
+        legend.text      =element_text(size=20)
+        , plot.title = element_text(size = 12, face = "bold")
+  ) + 
+  scale_fill_manual( values= fusion_type_ccc ) + coord_flip()
+  
+
+
+tally = data.frame ( table ( fuse2[fuse2$treatment != "Unknown", c("treatment","is.cancer")]  )  )  
+tally$treatment = factor ( tally$treatment, c("Treated", "Naive"))
+
+is_cancer_ccc = c(yes='#a678d6', no='#cfd5e3')
+treat_type_cancer  = ggplot( tally  , aes(x=treatment , y=Freq, fill=is.cancer   )) +
+  geom_bar(position="fill", stat="identity")+
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ylab("") + 
+  xlab("") + 
+  theme(legend.position="none",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=12),
+        axis.title.y     = element_text(size=15), 
+        legend.text      =element_text(size=20)
+        , plot.title = element_text(size = 12, face = "bold")
+  ) + coord_flip() + scale_fill_manual(values= is_cancer_ccc  )
+
+
+
 
  
  
+ 
+## tablulate classifications 
+
+fuse2$sample.classification = gsub ( "NonPrimary" , "Metastasis", fuse2$sample.classification )
+fuse2$sample.classification = factor ( fuse2$sample.classification, c(  "Metastasis" , "Primary" , "Unknown"  ))
+
+
+
+
+class_type_stack=  fuse2[fuse2$sample.classification != "Unknown", ]  %>% dplyr::group_by(sample.classification, type) %>%
+  dplyr::summarise(
+    Total = n()  
+  ) %>% 
+     ggplot( .  , aes(x=sample.classification , y=Total, fill=type   )) +
+  geom_bar(position="fill", stat="identity") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ylab("") + 
+  xlab("") + 
+  theme(legend.position="bottom",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=12),
+        axis.title.y     = element_text(size=15), 
+        legend.text      =element_text(size=20)
+        , plot.title = element_text(size = 12, face = "bold")
+  ) + 
+  scale_fill_manual( values= fusion_type_ccc ) + coord_flip() 
+  
+
+
+
+tally = data.frame ( table ( fuse2[, c("sample.classification","is.cancer")]  )  )  
+tally=tally[tally$sample.classification != "Unknown", ]
+tally$sample.classification = factor ( tally$sample.classification, c('Metastasis',  "Primary"))
+
+
+class_type_cancer  = ggplot( tally  , aes(x=sample.classification , y=Freq, fill=is.cancer   )) +
+  geom_bar(position="fill", stat="identity")+
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ylab("") + 
+  xlab("") + 
+  theme(legend.position="bottom",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=12),
+        axis.title.y     = element_text(size=15), 
+        legend.text      =element_text(size=20)
+        , plot.title = element_text(size = 12, face = "bold")
+  ) + coord_flip() + scale_fill_manual(values= is_cancer_ccc  )
+
+
+
+(treat_type_stack + treat_type_cancer)/
+(class_type_stack + class_type_cancer)
 
 
 fuse.by.sample.type = fuse2[! ( fuse2$sample.type %in% c ("Chloroma"  ,"Unknown" ) ), ]  %>% dplyr::group_by(sample.type, RNAseq.id, cancer.subtype) %>%
@@ -5773,12 +5886,10 @@ fuse.by.sample.type = fuse2[! ( fuse2$sample.type %in% c ("Chloroma"  ,"Unknown"
 
 
  
-
-
-
-
 ### now plot by classification 
-### hold
+
+
+
 fuse.by.class = fuse2[fuse2$sample.classification != "Unknown", ]  %>% dplyr::group_by(sample.classification, RNAseq.id) %>%
   dplyr::summarise(
     Total = n()  
