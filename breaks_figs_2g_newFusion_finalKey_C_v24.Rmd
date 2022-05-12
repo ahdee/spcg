@@ -5756,7 +5756,7 @@ fuse.by.treatment = ggplot( fuse.by.treatment  , aes(y=Total, x=treatment))+
   ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") + xlab ( "") +  ylab ( "") +
    scale_fill_manual(values = unique (brewer.pal(7, "Dark2") ))  #+ ylim(0,max ( fuse.by.treatment$Total))  #+ facet_wrap(cancer.subtype~., ncol=3)
 
-fuse.by.treatment = ggpval:: add_pval(fuse.by.treatment, pairs = list(c(1, 2)), test='wilcox.test')
+fuse.by.treatment = my_add_pval(fuse.by.treatment, pairs = list(c(1, 2)), test='wilcox.test', textsize = 10)
 
 
 #####  tabulate treatment
@@ -5917,10 +5917,10 @@ fuse.by.class_plot = ggplot( fuse.by.class  , aes(y=Total, x=sample.classificati
   ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") + xlab ( "") +  ylab ( "") +
    scale_fill_manual(values = unique (brewer.pal(7, "Accent") ))  #+ ylim(0,max ( fuse.by.treatment$Total))  #+ facet_wrap(cancer.subtype~., ncol=3)
 
-fuse.by.class_plot = ggpval::add_pval(fuse.by.class_plot, pairs = list(c(1, 2)), test='wilcox.test', textsize=20)
+fuse.by.class_plot = my_add_pval(fuse.by.class_plot, pairs = list(c(1, 2)), test='wilcox.test', textsize=10)
 
 
-
+fuse.by.treatment + fuse.by.class_plot
 ####
 
 
@@ -13208,7 +13208,6 @@ temps = psb_fusions
 temps$type.x = gsub ( "both", "shared", temps$type.x )
 temps$type.x  = factor ( temps$type.x , levels = c( "primary_only", "shared", "secondary_only" ))
 long_cmp_fusion <- temps %>% group_by(type.x, pid) %>% summarise ( TotalbyType = n()
-                                                                         #,type.x = factor(type.x, levels=c("primary_only", "both", "secondary_only"))
                                                                          ) %>%
 ggplot( .  , aes(y=TotalbyType, x=type.x))+
   geom_quasirandom(aes(fill = type.x ), size = 6, shape = 21, alpha = .5) +
@@ -13226,20 +13225,36 @@ ggplot( .  , aes(y=TotalbyType, x=type.x))+
   scale_fill_manual(values = unique (brewer.pal(7, "Dark2") ))  #+ ylim(0,max ( fuse.by.treatment$Total))  #+ facet_wrap(cancer.subtype~., ncol=3)
 
 ## added post=2 to correct for pvalue
-long_cmp_fusion = my_add_pval(long_cmp_fusion, pairs = list(c(1, 2)  ), test='wilcox.test', post=2, textsize = 10)
-long_cmp_fusion = my_add_pval(long_cmp_fusion, pairs = list(c(2, 3)  ), test='wilcox.test', post=2, textsize = 10) 
+long_cmp_fusion = my_add_pval(long_cmp_fusion, pairs = list(c(1, 2)  ), test='wilcox.test', post=1, textsize = 10)
+long_cmp_fusion = my_add_pval(long_cmp_fusion, pairs = list(c(2, 3)  ), test='wilcox.test', post=1, textsize = 10) 
+
+
+temps %>% group_by(pid, type.x) %>% summarise ( Total = n()) %>% 
+kruskal.test(Total ~ type.x, data = .)
+
 
 
 
 
 tally = data.frame ( table ( psb_fusions[ , c("type.x", "is.cancer")]) ) 
 
- make.pie( tally[ tally$is.cancer == "yes", ]
-                , name.first="3' Gene"
-                , cc = c("#8be386" ,"#eb4034", "#79c4d1" )
-                , leg.pos = "bottom"
-                , title = "3' gene is Cancer"
-                )
+ggplot( tally  , aes(x=type.x  , y=Freq, fill=is.cancer   )) +
+  geom_bar(position="fill", stat="identity")+
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ylab("") + 
+  xlab("") + 
+  theme(legend.position="bottom",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=12),
+        axis.title.y     = element_text(size=15), 
+        legend.text      =element_text(size=20)
+        , plot.title = element_text(size = 12, face = "bold")
+  ) + coord_flip() + scale_fill_manual(values= is_cancer_ccc  )
+
 
 # worth mentioning 
 psb_fusions$left = gsub ( "-.*$", '', psb_fusions$info)
