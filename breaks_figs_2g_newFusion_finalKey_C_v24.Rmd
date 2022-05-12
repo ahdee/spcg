@@ -13237,8 +13237,10 @@ kruskal.test(Total ~ type.x, data = .)
 
 
 tally = data.frame ( table ( psb_fusions[ , c("type.x", "is.cancer")]) ) 
+tally$type.x = gsub ( "both", "shared", tally$type.x)
+tally$type.x  = factor ( tally$type.x , levels = c(  "secondary_only" , "shared", "primary_only"))
 
-ggplot( tally  , aes(x=type.x  , y=Freq, fill=is.cancer   )) +
+long_stack_is_cancer <- ggplot( tally  , aes(x=type.x  , y=Freq, fill=is.cancer   )) +
   geom_bar(position="fill", stat="identity")+
   theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -13268,7 +13270,7 @@ kable ( long_fusion_ofInt[!duplicated ( paste(long_fusion_ofInt$pid, long_fusion
 
 ## secondary 
 
-long_fusion_ofInt = psb_fusions [ (psb_fusions$type.x == "secondary_only" & psb_fusions$is.cancer == "yes" & psb_fusions$frameness == "in.frame" | psb_fusions$type.y == "is.obsv") & psb_fusions$left != psb_fusions$right , ]
+long_fusion_ofInt = psb_fusions [ (psb_fusions$type.x == "secondary_only" & psb_fusions$is.cancer == "yes" & psb_fusions$frameness == "in.frame" | psb_fusions$type.y == "is.obsv") & psb_fusions$left != psb_fusions$right | grepl ( "NTRK3", psb_fusions$right), ]
 long_fusion_ofInt=long_fusion_ofInt[ order ( long_fusion_ofInt$type.y), ]
 kable ( long_fusion_ofInt[!duplicated ( paste(long_fusion_ofInt$pid, long_fusion_ofInt$info )) , c("pid", "info","cancer.subtype", "type.y")], format="html", row.names=F, table.attr = "style='width:40%;'" ) %>%
   kable_classic(full_width = F, position = "center", )  %>%
