@@ -4297,7 +4297,7 @@ fusetemp = fuse1
 fusetemp$uid = paste ( fusetemp$RNAseq.id, fusetemp$fusion)
 
 # study fusions based on domain output from arriba ( modified version see desktop, took output of fusions and ran arriba to get the domain Dropbox\Oncology Lab\RNA-SEQ\2021\fusion.mod\arriba_v2.1.0\fusion_domain )
-fusion_domain = readRDS( "domainsresults_2022.rds"  )
+fusion_domain = readRDS( "../domainsresults_2022.rds"  )
 # manaul relabeling 
 fusion_domain$final_left$proteinDomainName = 
   gsub ( "(a.k.a. RRM, RBD, or RNP domain)"
@@ -4440,11 +4440,14 @@ return ( graph )
 
 ```{r}
 
-in_domain_net = draw_network1(df= in_domain, layout="kk")
-render_graph(in_domain_net, layout = "fr")
+## modifying 3' networks to make it look better. 
+in_frame_domain$right_plot + ggtitle ("3' Domain in.frame") 
+in_domain_net = draw_network1(in_domain, layout="kk")
+render_graph(in_domain_net, layout = "fr", height=1500, width=2000  )
 
+out_frame_domain$right_plot + ggtitle ("3' Domain out.of.frame")
 out_domain_net = draw_network1(out_domain, layout="kk")
-render_graph(out_domain_net, layout = "fr")
+render_graph(out_domain_net, layout = "fr", height=1500, width=2000 )
 
 ```
 
