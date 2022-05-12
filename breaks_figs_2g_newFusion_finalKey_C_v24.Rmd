@@ -5724,9 +5724,11 @@ ant$X2 = factor ( ant$X2, rev (  "5UTRs","promoters" , "exons" , "3UTRs" ) )
   ant$X2 = factor ( ant$X2, levels = rev ( c( "promoter" , "5UTR", "coding", "3UTR"  )) )
     
 balloonplot_type=   ggplot(ant, aes(x =X1, y = X2))  +geom_point( size=0,shape=21, colour="white", fill="#80B1D3", alpha=0 )+
-  geom_point( data=ant[ant$value!=0, ], aes(size=value),shape=21, colour="white", fill="#80B1D3", alpha=1) + theme_minimal() +
-  geom_tile(color = "black", fill = "transparent") + geom_text(data=ant[ant$value!=0, ], aes(label=value),hjust=.50, vjust=.5, size=12) +
-  scale_size_continuous(range = c(50,80)) + theme ( legend.position = "none") + scale_x_discrete(position='top') + xlab("3' Gene") + ylab("5' Gene") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+  geom_point( data=ant[ant$value!=0, ], aes(size=value, fill=value),shape=21, colour="white", 
+              #fill="#80B1D3", 
+              alpha=1) + theme_minimal() +
+  geom_tile(color = "black", fill = "transparent") + geom_text(data=ant[ant$value!=0, ], aes(label=value),hjust=.50, vjust=.5, size=10) +
+  scale_size_continuous(range = c(8,40)) + theme ( legend.position = "none") + scale_x_discrete(position='top') + xlab("3' Gene") + ylab("5' Gene") + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black")) +
    theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
         
@@ -5735,7 +5737,8 @@ balloonplot_type=   ggplot(ant, aes(x =X1, y = X2))  +geom_point( size=0,shape=2
         axis.title.x = element_text(size=30),
         
         axis.title.y     = element_text(size=30)
-  ) 
+  ) +  scale_fill_gradientn(colours=c("#a3c9e3", "#80B1D3","#80B1D3",  "#428dc2",  "#428dc2",  "#428dc2",  "#428dc2", "#428dc2", "#0f72b8") , limits = c(10, 706))
+  
 
 
 tally = ant 
