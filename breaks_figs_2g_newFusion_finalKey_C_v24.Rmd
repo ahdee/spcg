@@ -4156,6 +4156,15 @@ fusion_cosmic_right =  fuse2[fuse2$frameness == "in.frame" | fuse2$frameness == 
   ) + coord_flip() + scale_fill_manual(values =c(  ggsci::pal_jco()(10) )  )
 
 
+fuse2.1 = merge ( fuse2, rna.key[ , c("RNAseq.id", "cancer.subtype", "patient.id")], by="RNAseq.id")
+fuse2.1[fuse2.1$right == "TP53" & (fuse2.1$frameness == "in.frame" | fuse2.1$frameness == "out.of.frame")  , ] 
+# need to look up TP53 and see how this works. 
+
+fuse2.1[fuse2.1$onco.tsg.2 == "TSG" & ( fuse2.1$frameness == "out.of.frame")  , ] 
+fuse2.1[fuse2.1$onco.tsg.2 == "ONCOGENE" & ( fuse2.1$frameness == "in.frame")  , ] 
+
+
+
 ```
 
 
