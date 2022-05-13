@@ -6386,6 +6386,7 @@ this.up$diff_txns = this.up$median.txn2  - this.up$gtex.median
 # we need to use GTEx xcell however keep in mind that means the means might be wayyy off but I think this is ok since I'm trying 
 # so to be safe Will set to AND or OR the reason is because are combining - this will probably miss important things 
 # not scratch that will use | OR and basically the idea is that since were depending on 2 algo we need to trust that its correct. 
+# 5.13.2022 # see notion notes: https://www.notion.so/tree101/2022-March-433d990a84e64dd1be5d5c80d411147f#49ad526cf39649f3a140dd3db4275228
 
 this.up = this.up[ 
                   (this.up$diff_xcell > -normal_check & this.up$tree.xcell == "OUTLIER_HIGH" ) |
@@ -6449,10 +6450,17 @@ this.down$diff_txns = this.down$median.txn2  - this.down$gtex.median
 
 # big broad filter first, the idea here is we don't care about under expression if the median for the cohort is too low. 
 # this.down = this.down[this.down$temp > mintpm, ] 
-# 5.13.2022 messed up should be > then the min which is 1 
+# 5.13.2022 this is correct, we do want the disease median to be higher, however 1 for mintpm is too stringent. 
+# Ok for low I decided to just do a standard cutoff with the median. 
+# basically median has to be greater than 1.5 
+# **so I decided to do a simple cutoff that is the median needs to be > 1.5 done.** 
+# that way the drop in expression will have some meaning to it.**
+# see notion notes: https://www.notion.so/tree101/2022-March-433d990a84e64dd1be5d5c80d411147f#49ad526cf39649f3a140dd3db4275228
+normal_check_low = 1.5
+
 this.down = this.down[ 
-                     (this.down$diff_xcell > normal_check & this.down$tree.xcell == "OUTLIER_LOW" )|
-                       (this.down$diff_txns > normal_check & this.down$tree.TxnSpear2 == "OUTLIER_LOW" ) 
+                     (this.down$tree.xcell.median > normal_check_low & this.down$tree.xcell == "OUTLIER_LOW" )|
+                       (this.down$median.txn2 > normal_check_low & this.down$tree.TxnSpear2 == "OUTLIER_LOW" ) 
                    , ]
 
 
