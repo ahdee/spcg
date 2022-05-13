@@ -4156,14 +4156,40 @@ fusion_cosmic_right =  fuse2[fuse2$frameness == "in.frame" | fuse2$frameness == 
   ) + coord_flip() + scale_fill_manual(values =c(  ggsci::pal_jco()(10) )  )
 
 
-fuse2.1 = merge ( fuse2, rna.key[ , c("RNAseq.id", "cancer.subtype", "patient.id")], by="RNAseq.id")
+### getting some examples. 
+
+## this needs to get fix 
+
+
+fuse2.1 = merge ( fuse2, rna.key[ , c("RNAseq.id", "patient.id", "patient.institution" )], by="RNAseq.id")
+fuse2.1$frameness =  ifelse ( fuse2.1$frameness == "." & fuse2.1$annt1 == "exons" & fuse2.1$annt2 == "5UTRs", "CDS-UTR", fuse2.1$frameness   )
+
+
 fuse2.1[fuse2.1$right == "TP53" & (fuse2.1$frameness == "in.frame" | fuse2.1$frameness == "out.of.frame")  , ] 
+fuse_tp53 = fuse2.1[fuse2.1$right == "TP53"   , ]
+fuse_tp53
+fuse_tp53$reading_frame = fuse_tp53$frameness  
+
+fuse_tp53 = fuse_tp53[ order ( fuse_tp53$frameness), ]
+
+kable ( fuse_tp53[ , c ("patient.id" ,"RNAseq.id"  ,"cancer.subtype", "fusion"  , "reading_frame" , "family.1", "family.2" , "onco.tsg.1" , "onco.tsg.2" , "is.cancer.1" , "is.cancer.2" ) ]
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(1, bold = T, border_right = T)  
+
+
+fuse_tp53[ which ( fuse_tp53$RNAseq.id == "AI1"), ]$frameness 
+
+out [ out$RNAseq.id %in% fuse2.1[fuse2.1$right == "TP53"   , ]$RNAseq.id & out$gene == "TP53", ] 
+
 # need to look up TP53 and see how this works. 
 
 fuse2.1[fuse2.1$onco.tsg.2 == "TSG" & ( fuse2.1$frameness == "out.of.frame")  , ] 
 fuse2.1[fuse2.1$onco.tsg.2 == "ONCOGENE" & ( fuse2.1$frameness == "in.frame")  , ] 
 
-
+# more info 
+fusion[fusion$RNAseq.id == "BD4" & grepl ( "-PTMA", fusion$fusion), c("RNAseq.id", "frameness", "fusion", "FRPM", "is.cancer.1", "annt1", "annt2", "domain1", "domain2") ]
+fusion[grepl ( "FUS-FEV", fusion$fusion), c("RNAseq.id", "frameness", "fusion", "FRPM", "is.cancer.1", "annt1", "annt2", "domain1", "domain2") ]
 
 ```
 
