@@ -6449,10 +6449,10 @@ this.down$diff_txns = this.down$median.txn2  - this.down$gtex.median
 
 # big broad filter first, the idea here is we don't care about under expression if the median for the cohort is too low. 
 # this.down = this.down[this.down$temp > mintpm, ] 
-
+# 5.13.2022 messed up should be > then the min which is 1 
 this.down = this.down[ 
-                     (this.down$diff_xcell < normal_check & this.down$tree.xcell == "OUTLIER_LOW" )|
-                       (this.down$diff_txns < normal_check & this.down$tree.TxnSpear2 == "OUTLIER_LOW" ) 
+                     (this.down$diff_xcell > normal_check & this.down$tree.xcell == "OUTLIER_LOW" )|
+                       (this.down$diff_txns > normal_check & this.down$tree.TxnSpear2 == "OUTLIER_LOW" ) 
                    , ]
 
 
