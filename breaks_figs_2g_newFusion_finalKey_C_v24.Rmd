@@ -3706,7 +3706,7 @@ sum ( tallyfusion.pid_tb$is.novel )
 # fusion chunk 5 fusion pie 
 
 
-fusion.in =  fusion.reclass[fusion.reclass$frameness == "in.frame", ]
+fusion.in =  fusion.reclass[fusion.reclass$frameness == "in.frame", ] # fusion.reclass is all inframe already
 fusion.in$cancer.subtype = NULL 
 fusion.in$patient.id = NULL 
 
@@ -4116,6 +4116,45 @@ fusion_right.plot =  ggplot( fusion_right.out  , aes(x=reorder_within ( right, p
 
 
 ################## 
+
+```
+
+```{r}
+
+library  ( ggsci )
+# 5.12.22 add cosmic annotation and tabulate for fusion 3' gene 
+# ratio of TSG to oncogene
+dim ( fuse2[fuse2$frameness == "in.frame", ])
+
+fuse2$is.cancer = ifelse ( fuse2$right %in% genelist$gene, "yes", "no")
+
+fusion_cosmic_right =  fuse2[fuse2$frameness == "in.frame" | fuse2$frameness == "out.of.frame" , ]  %>% dplyr::group_by(frameness,onco.tsg.2) %>%
+  dplyr::summarise(
+    Total = n()  
+  ) %>% mutate (
+    onco.tsg.2 =ifelse(onco.tsg.2 == "", "no_annt", onco.tsg.2), 
+    onco.tsg.2 = gsub ( "0", "not_cancer", onco.tsg.2), 
+    onco.tsg.2 = ifelse(onco.tsg.2 == "TSG,ONCOGENE", "ONCOGENE,TSG", onco.tsg.2),
+    onco.tsg.2 = factor ( onco.tsg.2, levels = c("not_cancer" , "no_annt",  "ONCOGENE,TSG",  "ONCOGENE" , "TSG") )
+  )%>%
+  ggplot( .  , aes(x=frameness, y=Total, fill=onco.tsg.2   )) +
+  geom_bar(position="fill", stat="identity") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
+  ylab("") + 
+  xlab("") + 
+  theme(legend.position="right",  legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=12),
+        axis.title.y     = element_text(size=15), 
+        legend.text      =element_text(size=15),
+        legend.title =  element_blank()
+        , plot.title = element_text(size = 12, face = "bold")
+  ) + coord_flip() + scale_fill_manual(values =c(  ggsci::pal_jco()(10) )  )
+
 
 ```
 
