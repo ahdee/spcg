@@ -6909,13 +6909,17 @@ right_rnk = oncoTOP  %>%
   group_by( right )  %>%
   dplyr::summarise  (
     Freq = n()
-  )  %>% arrange ( desc ( Freq, right) ) %>% data.frame ( stringsAsFactors = F) %>% .$right 
+  )  %>% arrange ( desc ( Freq), desc (right)  ) %>% data.frame ( stringsAsFactors = F) %>% .$right 
 
 left_rnk = oncoTOP  %>% 
   group_by( left )  %>%
   dplyr::summarise  (
     Freq = n()
-  )  %>% arrange ( desc ( Freq, left) ) %>% data.frame ( stringsAsFactors = F) %>% .$left 
+  )  %>% arrange ( desc ( Freq) , desc (left)  ) %>% data.frame ( stringsAsFactors = F) %>% .$left 
+
+
+
+
 
 
 
