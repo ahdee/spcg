@@ -7116,11 +7116,14 @@ of = of[ , -c(1,7,8,10)]
 
 
 ```{r}
-# tabulation 
+# tabulation of outliers 
+# important using "role" which means eg oncogene = oncogene + (oncogene,fusion) but not (oncogene,tsg)
+# tabulation of outliers  
 
 combolist=genelist$gene
-this.up_tab = up.all_qc [ up.all_qc$gene %in% unique ( c ( drug.up$gene, drug.down$gene, combolist) ),  ]
-this.down_tab = down.all_qc [ down.all_qc$gene %in% unique ( c ( drug.up$gene, drug.down$gene, combolist) ),  ]
+this.up_tab = up.all_qc [ up.all_qc$gene %in% unique ( c ( combolist) ),  ]
+# need to remove drug becase this should only be for tsg's 
+this.down_tab = down.all_qc [ down.all_qc$gene %in% unique ( c ( combolist) ),  ]
 
 
 this.up_tab = merge ( this.up_tab, rna.key[ , c("RNAseq.id", "cancer.subtype")], by="RNAseq.id")
