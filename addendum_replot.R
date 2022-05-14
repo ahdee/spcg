@@ -14,6 +14,24 @@ v11_key  = counts$tree.key
 counts = counts$treehouse
 
 
+## figuring out GTEx 
+gtype = unique ( sort ( gtex_key$type2))
+
+
+gHeme = gtype [ grepl ( "lymp|blood", gtype, ignore.case = T)]
+gCNS = gtype [ grepl ( "brain|pitu|nerv", gtype, ignore.case = T)]
+gSolid = gtype [ ! gtype %in% c( gHeme, gCNS)]
+
+# this will match cancer.type of the key 
+# > unique ( rna.key$cancer.type)
+# "Leukemia" "Solid"    "CNS"     
+gtex_id = list()
+
+gtex_id [["CNS"]] = gtex_key[ gtex_key$type2 %in% gCNS,    ]$sample
+gtex_id [["Solid"]] = gtex_key[ gtex_key$type2 %in% gSolid,    ]$sample
+gtex_id [["Leukemia"]] = gtex_key[ gtex_key$type2 %in% gHeme,    ]$sample
+
+
 
 by.pid.newtuk <- function (ids,test.this, label, tpm.df, tpm_id, size=12, size2 = 12, sizept = 1, sizeshaperange=22, low.border = 0, 
                            sizeshape = 5, sizexy = 22, ap=.5, cpp = "#afc1de" ,xl = " log2 ( TPM + 1) " , gtitle='outlier' ){
@@ -302,14 +320,17 @@ get.info <- function ( tube, rk ){
 # or info[[tree.best]]$neighbor$Row.names
 
 
-test.id = "AP7"
-gene.id = "TP53"
+test.id = "AS12"
+gene.id = "MYOD1"
+id_cancertype = rna.key[ rna.key$RNAseq.id == test.id, ]$cancer.type
 info = get.info ( test.id , rna.key )
 tg = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , info[["txn2.best"]] )  ) )
                     ,  test.this=unique ( c ( gene.id ) ) , label=test.id , tpm.df= counts, tpm_id = tpm [ , test.id, drop=F ],
                     size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#91badb', gtitle="Disease") 
 
-gg = by.pid.newtuk( ids= as.character ( unique ( c ( test.id, info$gtex.best$neighbor$Row.names)  ) )
+# not goint to use matched: info$gtex.best$neighbor$Row.names
+# use solid CNA or heme instead. 
+gg = by.pid.newtuk( ids= as.character ( unique ( c ( test.id, gtex_id[[ id_cancertype ]] )  ) ) 
                     ,  test.this=gene.id , label=test.id , tpm.df= gtex, tpm_id = tpm [ , test.id, drop=F ],
                     size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#88d134',  gtitle= "Normal")
 
