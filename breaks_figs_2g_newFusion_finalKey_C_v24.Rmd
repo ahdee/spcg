@@ -6690,7 +6690,7 @@ fuse_outlier = draw_fusionout(fuse2.2, "in.frame", qcout = up.all_qc)
 
 
 ```{r fig=TRUE,fig.width=10, fig.height=10, echo=FALSE, include=TRUE , results='asis'}
-lolli_right
+fuse_outlier
 ```
 
 ### Is diagnostic or Well known 
@@ -6708,7 +6708,8 @@ well.known.diag
 
 ```{r}
 
-# make oncoprint for fusion! 
+# plotting canonical right
+
 temp.all$right =  gsub ( ".*-", '',temp.all$fusion)
 oncofuse = fusion[ fusion$canon.right == 1, ]$right
 
@@ -6726,13 +6727,13 @@ right_rnk = oncofuse  %>%
   group_by( right )  %>%
   dplyr::summarise  (
     Freq = n()
-  )  %>% arrange ( desc ( Freq, right) ) %>% data.frame ( stringsAsFactors = F) %>% .$right 
+  )  %>% arrange ( desc ( Freq), desc (right) ) %>% data.frame ( stringsAsFactors = F) %>% .$right 
 
 left_rnk = oncofuse  %>% 
   group_by( left )  %>%
   dplyr::summarise  (
     Freq = n()
-  )  %>% arrange ( desc ( Freq, left) ) %>% data.frame ( stringsAsFactors = F) %>% .$left 
+  )  %>% arrange ( desc ( Freq) , desc (left) ) %>% data.frame ( stringsAsFactors = F) %>% .$left 
 
 
 
@@ -6832,26 +6833,7 @@ top_annt= HeatmapAnnotation(
                 , annotation_name_gp= gpar(fontsize = 0, col="white" ) )
 
 
-# needs to kep the order of z.up
-# fusion.total.disease
-# not sure what this is for 
-if ( 1> 2 ){
-rightannt = fusion.total.disease[ fusion.total.disease$left %in% row.names(z.up), c("left","cancer.subtype")]  %>% group_by(left,cancer.subtype) %>% 
-  summarise(Freq=n()) %>%
-  pivot_wider(names_from = left,values_from=Freq) %>%  mutate_each(funs(replace(., is.na(.), 0))) %>% data.frame(stringsAsFactors = F) 
-row.names ( rightannt) = rightannt[,1]
 
-rightannt = rightannt[,row.names(z.up)]
-rightannt$cancer.subtype  = NULL 
-right_annt= rowAnnotation(
-                total = anno_barplot( t ( rightannt)  
-                                     , width = unit(2.2, "cm")
-                                     , gp = gpar(fill = c(subcolor[row.names(rightannt)]))
-                                    , axis_param = list (gp=gpar(fontsize=18), at=c(5,10)  )
-                                    , bar_width = 1.0) 
-                # little trick to mask out the annotation. 
-                , annotation_name_gp= gpar(fontsize = 0, col="white" ) )
-}
 
 
 # redo left row ranking 
