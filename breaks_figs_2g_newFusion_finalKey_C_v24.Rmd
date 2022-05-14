@@ -6603,61 +6603,15 @@ rna.down_cosmic = down.all_qc [ down.all_qc$gene %in% unique ( genelist$gene    
 
 ```{r}
 
-# because this involves outlier we need to now remove
-fuseout = temp.all[ ! temp.all$RNAseq.id %in% failedChem, ]
-fuseout$right = gsub ( ".*-", '',fuseout$fusion)
-fuseout = merge ( fuseout, up.all_qc[ , c("RNAseq.id","both","gene")], by.x=c ("right","RNAseq.id"), c( "gene","RNAseq.id" ) )
-fuseout = fuseout[  fuseout$frameness %in% c("in.frame" ),  ]
-# remove strange read throughs 
-
-
-fuseout2 = fuseout %>% 
-  dplyr::group_by(fusion, type )  %>%
-  dplyr::summarise  (
-    Freq = n()
-  )  %>% dplyr::arrange ( dplyr::desc ( Freq) ) %>% data.frame ( stringsAsFactors = F)
-
-
-fuseout2$fusion = factor ( fuseout2$fusion , levels = rev ( unique ( fuseout2$fusion) ) )
-ggplot(fuseout2, aes(x = fusion, y=Freq,  fill = type)) + 
-  scale_fill_manual(values =  cc5  ) +
-  geom_bar(stat = 'identity', position = 'stack') +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black")) +
-  ylab("") + 
-  xlab("") +
-  #scale_y_continuous(breaks= max(fuseout2$Freq)) + 
-  coord_flip() 
-
-
-lolli_right = ggplot(fuseout2, aes(x=fusion, y=Freq)) +
-  geom_segment( aes(x=fusion, xend=fusion, y=0, yend=Freq), color="black") +
-  geom_point( color=cc5[fuseout2$type], size=7, alpha=0.75) +
-  theme_light() +
-  theme(
-    panel.grid.major.y = element_blank(),
-    panel.border = element_blank(),
-    axis.ticks.y = element_blank()
-  ) + coord_flip() + xlab("") + ylab("Total") +
-  theme(legend.position="bottom", legend.title=element_blank(), legend.key = element_blank(),
-        
-        axis.text.y = element_text(size= 20 ),
-        axis.text.x = element_text(angle = 0, size= 20 ),
-        axis.title.x = element_text(size=22),
-        
-        axis.title.y     = element_text(size=22), 
-        legend.text      =element_text(size=12)
-  ) + ggtitle ( "With Outlier Analysis")
-
-
-
-
-
-
+# because this involves outlier we need to now remove failedQC 
 ## rethinking outlier fusions by plotting median and the tpm instead 
 
-fuse_out2 = temp.all[ ! temp.all$RNAseq.id %in% failedChem, ]
+#  temp.all has the type fixed while fuse2.1 has the framness fix. 
+# note once I move the framness fix to the main fusion this will longer be necessary. 
+
+fuse2.2 = merge ( fuse2.1, temp.all[ , c("uid", "type")], by= "uid")
+
+fuse_out2 = fuse2.2[ ! fuse2.2$RNAseq.id %in% failedChem, ]
 fuse_out2$right = gsub ( ".*-", '',fuse_out2$fusion)
 fuse_out2 = merge ( fuse_out2, up.all_qc, by.x=c ("right","RNAseq.id"), c( "gene","RNAseq.id" ) )
 fuse_out2 = fuse_out2[  fuse_out2$frameness %in% c("in.frame" ),  ]
@@ -6673,7 +6627,7 @@ for ( r in 1:nrow ( fuse_out2)){
 fuse_out2$delta = diff 
 
 fuse_out2 = fuse_out2[ order ( fuse_out2$fusion, fuse_out2$delta ), ]
-fuse_out2$fusion = factor ( fuse_out2$fusion, levels = fuse_out2$fusion)
+fuse_out2$fusion = factor ( fuse_out2$fusion, levels = unique ( fuse_out2$fusion) )
 
 fuse_out2$c = ''; 
 fuse_out2$c[1:17] = "1"
