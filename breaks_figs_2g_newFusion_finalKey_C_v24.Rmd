@@ -4718,9 +4718,11 @@ common.left  = fusion_truseq %>% dplyr::group_by( left, frameness2 ) %>%
 
 test.gene = "TP53"
 grepl_this = paste0('^', test.gene, '-|-', test.gene, '$')
+ctype = c("Solid", 'CNS')
+
 #test.sample = fusion_truseq[fusion_truseq$right == test.gene, c("RNAseq.id", "fusion")]
 # change below criteria to meet your needs 
-test.sample = fuse2.1 [ fuse2.1$right == test.gene & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
+test.sample = fuse2.1 [ fuse2.1$right == test.gene & grepl ( "in.frame", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
 test.sample = fuse2.1 [ grepl ( "^TP53-|-TP53$", fuse2.1$fusion) & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
 test.sample = fuse2.1 [ grepl ( grepl_this , fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
 
@@ -4728,7 +4730,7 @@ test.tpm = melt ( tpm[tpm$gene==test.gene, test.sample$RNAseq.id] )
 test.tpm$group = "fusion"
 
 
-test.tpm = merge ( test.tpm, trueseq.key[trueseq.key$cancer.type %in% c("Solid", "CNS") , c("RNAseq.id", "cancer.subtype") ], by.x="variable",  by.y="RNAseq.id" )
+test.tpm = merge ( test.tpm, trueseq.key[trueseq.key$cancer.type %in% ctype , c("RNAseq.id", "cancer.subtype") ], by.x="variable",  by.y="RNAseq.id" )
 
 
 
