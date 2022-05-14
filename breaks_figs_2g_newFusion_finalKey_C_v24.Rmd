@@ -4716,11 +4716,19 @@ common.left  = fusion_truseq %>% dplyr::group_by( left, frameness2 ) %>%
 ###  TEST single plot samples with and without fusion_truseq. 
 # not this does not consider fusion_truseq type 
 
-test.gene = "COL1A1"
-test.sample = fusion_truseq[fusion_truseq$right == test.gene, c("RNAseq.id", "fusion")]
+test.gene = "TP53"
+#test.sample = fusion_truseq[fusion_truseq$right == test.gene, c("RNAseq.id", "fusion")]
+# change below criteria to meet your needs 
+test.sample = fuse2.1 [ fuse2.1$right == test.gene & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
+test.sample = fuse2.1 [ grepl ( "^TP53-|-TP53$", fuse2.1$fusion) & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
+test.sample = fuse2.1 [ grepl ( "^TP53-|-TP53$", fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
+
 test.tpm = melt ( tpm[tpm$gene==test.gene, test.sample$RNAseq.id] )
 test.tpm$group = "fusion"
-test.tpm = merge ( test.tpm, trueseq.key[ , c("RNAseq.id", "cancer.subtype") ], by.x="variable",  by.y="RNAseq.id" )
+
+
+test.tpm = merge ( test.tpm, trueseq.key[trueseq.key$cancer.type %in% c("Solid", "CNS") , c("RNAseq.id", "cancer.subtype") ], by.x="variable",  by.y="RNAseq.id" )
+
 
 
 nofusion.tpm = melt ( tpm[tpm$gene==test.gene, setdiff(trueseq.key$RNAseq.id, test.sample$RNAseq.id) ] ) 
@@ -4737,8 +4745,9 @@ testexpfusion$fusion = test.gene
 
 subcolor2 = subcolor 
 subcolor2["none"] = "#d2d4d6"
+## plot singles 
 
-ggplot(testexpfusion, aes(y=value, x=group))+ 
+single_cmp_fusion = ggplot(testexpfusion, aes(y=value, x=group))+ 
   geom_violin(alpha = 0.5) +
   geom_point(aes(fill = cancer.subtype), size = 4, shape = 21, position = position_jitterdodge(dodge.width = 0.25), alpha = 0.75 )+
   theme_bw() +
@@ -4753,7 +4762,10 @@ ggplot(testexpfusion, aes(y=value, x=group))+
         axis.title.y     = element_text(size=22), 
         legend.text      =element_text(size=12)
   ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") + xlab ( "") +  ylab ( "") +
-  scale_fill_manual(values = subcolor2 ) 
+  scale_fill_manual(values = subcolor2 )
+
+  my_add_pval(single_cmp_fusion, pairs = list(c(1, 2)), test='wilcox.test', textsize = 10) + ggtitle ( paste ( "Fusion vs No Fusion", test.gene ))
+  
 ```
 
 
