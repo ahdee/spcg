@@ -3959,7 +3959,7 @@ fusion.pie
 
 ```{r}
 os_tab = fusion.in2[ fusion.in2$cancer.subtype == "OS" & fusion.in2$type != "no.fusion", ]
-os_tab2 = tidyr::extract(os_tab, fusion, c("left", "right"), "(.*)-(.*)")
+os_tab2 = tidyr::extract(os_tab, fusion, c("left", "right"), "(.*)-(.*)") # the second argument is not "fusion" but the name of the column
 
 
 os_tab = data.frame ( table ( os_tab$fusion ) )
@@ -4116,6 +4116,13 @@ fusion_right.plot =  ggplot( fusion_right.out  , aes(x=reorder_within ( right, p
 
 
 ################## 
+# the issue with the above is that it only takes into consideration by disease, here is a breakdown irrespective of disease
+# still not much dominatge though
+fusion_inframe_tab_right = data.frame ( table ( fuse2.1 [ fuse2.1$frameness == "in.frame",  ]$right ))
+fusion_inframe_tab_right= fusion_inframe_tab_right[ order ( -fusion_inframe_tab_right$Freq), ]
+
+
+
 
 ```
 
@@ -4725,6 +4732,9 @@ ctype = c("Solid", 'CNS')
 test.sample = fuse2.1 [ fuse2.1$right == test.gene & grepl ( "in.frame", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
 test.sample = fuse2.1 [ grepl ( "^TP53-|-TP53$", fuse2.1$fusion) & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
 test.sample = fuse2.1 [ grepl ( grepl_this , fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
+
+#test.sample = fuse2.1 [ grepl ( "COL" , fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
+
 
 test.tpm = melt ( tpm[tpm$gene==test.gene, test.sample$RNAseq.id] )
 test.tpm$group = "fusion"
@@ -6602,10 +6612,10 @@ fuseout = fuseout[  fuseout$frameness %in% c("in.frame" ),  ]
 
 
 fuseout2 = fuseout %>% 
-  group_by(fusion, type )  %>%
+  dplyr::group_by(fusion, type )  %>%
   dplyr::summarise  (
     Freq = n()
-  )  %>% arrange ( desc ( Freq, right) ) %>% data.frame ( stringsAsFactors = F)
+  )  %>% dplyr::arrange ( dplyr::desc ( Freq) ) %>% data.frame ( stringsAsFactors = F)
 
 
 fuseout2$fusion = factor ( fuseout2$fusion , levels = rev ( unique ( fuseout2$fusion) ) )
@@ -6674,6 +6684,11 @@ fuse_out2$c[54:71] = "4"
 
 
 
+# combine is.diag with is.obsv 
+
+fuse_out2$type2 = gsub ("is.diag|is.obsv", "is.diag/obsv",    fuse_out2$type)
+
+
 fuse_outlier = ggplot( fuse_out2  , aes(x=reorder_within (  RNAseq.id, delta ,  fusion) , y=delta, fill=type   )) +
   geom_bar(stat = 'identity') +
   theme_bw() +
@@ -6692,9 +6707,9 @@ fuse_outlier = ggplot( fuse_out2  , aes(x=reorder_within (  RNAseq.id, delta ,  
   ) + 
   scale_x_reordered() +
   scale_fill_manual( values= cc5 ) + 
-  coord_flip() + ggtitle ( "Fusion 3' Outliers") +
+  coord_flip() + ggtitle ( "In-frame Fusion  + 3' as Outliers") +
   scale_y_continuous(expand = expansion(mult = c(0, .1))) +
-  facet_wrap(. ~ type, scales = "free" , ncol=3 ) +
+  facet_wrap(. ~ type2, scales = "free" , ncol=3 ) +
   theme(
         axis.text.y=element_blank(),
         axis.ticks.y=element_blank()) +
@@ -6707,15 +6722,6 @@ fuse_outlier = ggplot( fuse_out2  , aes(x=reorder_within (  RNAseq.id, delta ,  
   ) +  theme(strip.text.x = element_text(size = 20) )
 
 
-
-
-
-  #facet_wrap(fusion ~., scales = "free" , ncol=10 )
-  #facet_wrap(. ~ type, scales = "free" , ncol=3 )
-   #facet_wrap( ~fusion , ncol=1,  scales = "free"  )
-  #facet_grid( fusion~. ,  scales = "free", space="free" ,  switch ="both"  ) + theme(strip.text.y = element_text(angle = 0))
-  #facet_grid(fusion ~., scales = "free" , space = "free", switch="x"  ) 
-#facet_grid(fusion ~ type, scales = "free" , space = "free" )
 
 ```
 
