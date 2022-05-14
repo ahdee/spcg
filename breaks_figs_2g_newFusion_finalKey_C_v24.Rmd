@@ -4717,11 +4717,12 @@ common.left  = fusion_truseq %>% dplyr::group_by( left, frameness2 ) %>%
 # not this does not consider fusion_truseq type 
 
 test.gene = "TP53"
+grepl_this = paste0('^', test.gene, '-|-', test.gene, '$')
 #test.sample = fusion_truseq[fusion_truseq$right == test.gene, c("RNAseq.id", "fusion")]
 # change below criteria to meet your needs 
 test.sample = fuse2.1 [ fuse2.1$right == test.gene & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
 test.sample = fuse2.1 [ grepl ( "^TP53-|-TP53$", fuse2.1$fusion) & grepl ( "out|UTR", fuse2.1$frameness), c("RNAseq.id", "fusion") ]
-test.sample = fuse2.1 [ grepl ( "^TP53-|-TP53$", fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
+test.sample = fuse2.1 [ grepl ( grepl_this , fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
 
 test.tpm = melt ( tpm[tpm$gene==test.gene, test.sample$RNAseq.id] )
 test.tpm$group = "fusion"
@@ -4765,6 +4766,21 @@ single_cmp_fusion = ggplot(testexpfusion, aes(y=value, x=group))+
   scale_fill_manual(values = subcolor2 )
 
   my_add_pval(single_cmp_fusion, pairs = list(c(1, 2)), test='wilcox.test', textsize = 10) + ggtitle ( paste ( "Fusion vs No Fusion", test.gene ))
+  
+  
+  
+# how many fusions are TSG?   
+ tsg_fusions = data.frame(); 
+ # don't use tsg because this has fusion as well so could muddy the picture? 
+ 
+for ( test.gene in  tsg ) { 
+
+  grepl_this = paste0('^', test.gene, '-|-', test.gene, '$')
+  test.sample = fuse2.1 [ grepl ( grepl_this , fuse2.1$fusion) , c("RNAseq.id", "fusion") ]
+  tsg_fusions = rbind ( tsg_fusions, data.frame ( gene=test.gene, total=nrow ( test.sample)) )
+}
+ 
+ tsg_fusions = tsg_fusions[ order ( -tsg_fusions$total), ]
   
 ```
 
