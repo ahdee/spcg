@@ -16,7 +16,7 @@ counts = counts$treehouse
 
 
 by.pid.newtuk <- function (ids,test.this, label, tpm.df, tpm_id, size=12, size2 = 12, sizept = 1, sizeshaperange=22, low.border = 0, 
-                           sizeshape = 5, sizexy = 22, ap=.5, cpp = "#afc1de" ,xl = " log2 ( TPM + 1) "  ){
+                           sizeshape = 5, sizexy = 22, ap=.5, cpp = "#afc1de" ,xl = " log2 ( TPM + 1) " , gtitle='outlier' ){
   
   if (is.na(cpp)){
     cpp = getPalette( length ( unique (test.this)))
@@ -98,10 +98,10 @@ by.pid.newtuk <- function (ids,test.this, label, tpm.df, tpm_id, size=12, size2 
           axis.text.y = element_text(size= sizexy ),
           axis.text.x = element_text(angle = 90, size= sizexy ),
           axis.title.x = element_text(size=22),
-          
+          plot.title = element_text(size = 22, face = "bold"), 
           axis.title.y     = element_text(size=22), 
           legend.text      =element_text(size=12)
-    ) 
+    ) + ggtitle ( paste ( label, gtitle) )
   
   
   if ( low.border == 1){
@@ -302,20 +302,20 @@ get.info <- function ( tube, rk ){
 # or info[[tree.best]]$neighbor$Row.names
 
 
-test.id = "AI1"
+test.id = "AP7"
 gene.id = "TP53"
 info = get.info ( test.id , rna.key )
 tg = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , info[["txn2.best"]] )  ) )
                     ,  test.this=unique ( c ( gene.id ) ) , label=test.id , tpm.df= counts, tpm_id = tpm [ , test.id, drop=F ],
-                    size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#91badb') 
+                    size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#91badb', gtitle="Disease") 
 
 gg = by.pid.newtuk( ids= as.character ( unique ( c ( test.id, info$gtex.best$neighbor$Row.names)  ) )
                     ,  test.this=gene.id , label=test.id , tpm.df= gtex, tpm_id = tpm [ , test.id, drop=F ],
-                    size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#88d134')
+                    size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#88d134',  gtitle= "Normal")
 
 pan = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , colnames(counts) )  ) )
                     ,  test.this=unique ( c ( gene.id ) ) , label=test.id , tpm.df= counts, tpm_id = tpm [ , test.id, drop=F ],
-                    size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#8e8c8f') 
+                    size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#8e8c8f', gtitle= "Pan") 
 
 tg$jplot / gg$jplot / pan$jplot
 
