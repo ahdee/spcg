@@ -320,8 +320,8 @@ get.info <- function ( tube, rk ){
 # or info[[tree.best]]$neighbor$Row.names
 
 
-test.id = "AS12"
-gene.id = "MYOD1"
+test.id = "K1"
+gene.id = "KRAS"
 id_cancertype = rna.key[ rna.key$RNAseq.id == test.id, ]$cancer.type
 info = get.info ( test.id , rna.key )
 tg = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , info[["txn2.best"]] )  ) )
