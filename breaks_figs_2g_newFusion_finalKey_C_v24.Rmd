@@ -4158,14 +4158,16 @@ fusion_cosmic_right =  fuse2[fuse2$frameness == "in.frame" | fuse2$frameness == 
 
 ### getting some examples. 
 
+
 ## this needs to get fix 
 
 
 fuse2.1 = merge ( fuse2, rna.key[ , c("RNAseq.id", "patient.id", "patient.institution" )], by="RNAseq.id")
 fuse2.1$frameness =  ifelse ( fuse2.1$frameness == "." & fuse2.1$annt1 == "exons" & fuse2.1$annt2 == "5UTRs", "CDS-UTR", fuse2.1$frameness   )
-
+fuse2.1$frameness =  ifelse ( fuse2.1$frameness == "." & fuse2.1$annt1 == "5UTRs" & fuse2.1$annt2 == "exons", "UTR-CDS", fuse2.1$frameness   )
 
 fuse2.1[fuse2.1$right == "TP53" & (fuse2.1$frameness == "in.frame" | fuse2.1$frameness == "out.of.frame")  , ] 
+
 fuse_tp53 = fuse2.1[fuse2.1$right == "TP53"   , ]
 fuse_tp53
 fuse_tp53$reading_frame = fuse_tp53$frameness  
@@ -4178,9 +4180,44 @@ kable ( fuse_tp53[ , c ("patient.id" ,"RNAseq.id"  ,"cancer.subtype", "fusion"  
   column_spec(1, bold = T, border_right = T)  
 
 
+kable ( fuse_tp53[ , c ("patient.id" ,"RNAseq.id"  ,"cancer.subtype", "fusion"  , "reading_frame" , "SV_RESULT"  ) ]
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(1, bold = T, border_right = T)  %>% 
+  footnote(
+    symbol  = c("SV - means no WGS match")) 
+
+
+
+
 fuse_tp53[ which ( fuse_tp53$RNAseq.id == "AI1"), ]$frameness 
 
 out [ out$RNAseq.id %in% fuse2.1[fuse2.1$right == "TP53"   , ]$RNAseq.id & out$gene == "TP53", ] 
+
+
+## more tp53 for left gene now 
+
+fuse_tp53_left = fuse2.1[fuse2.1$left == "TP53"   , ]
+fuse_tp53_left
+fuse_tp53_left$reading_frame = fuse_tp53_left$frameness  
+
+fuse_tp53_left = fuse_tp53_left[ order ( fuse_tp53_left$frameness), ]
+
+
+kable ( fuse_tp53_left[, c ("patient.id" ,"RNAseq.id"  ,"cancer.subtype", "fusion"  , "reading_frame" , "SV_RESULT"  ) ]
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(1, bold = T, border_right = T)  %>% 
+  footnote(
+    symbol  = c("SV - means no WGS pair")) 
+
+
+out [ out$gene == "TP53" & out$RNAseq.id %in% fuse2.1[fuse2.1$left == "TP53" , ]$RNAseq.id , ]
+
+# what other tsg might be influence by out.of.frame or utr swaps? 
+temp = fuse2.1[fuse2.1$onco.tsg.2 == "TSG" & fuse2.1$frameness != "in.frame" , ] 
+
+out [ out$ggene == "TP53" & out$RNAseq.id %in% fuse2.1[fuse2.1$left == "TP53" , ]$RNAseq.id , ]
 
 # need to look up TP53 and see how this works. 
 
