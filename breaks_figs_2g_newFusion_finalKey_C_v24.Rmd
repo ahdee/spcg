@@ -6609,12 +6609,15 @@ rna.down_cosmic = down.all_qc [ down.all_qc$gene %in% unique ( genelist$gene    
 #  temp.all has the type fixed while fuse2.1 has the framness fix. 
 # note once I move the framness fix to the main fusion this will longer be necessary. 
 
-fuse2.2 = merge ( fuse2.1, temp.all[ , c("uid", "type")], by= "uid")
+up.all_qc = rna.up[!rna.up$RNAseq.id %in% failedChem, ]
+down.all_qc = rna.down[!rna.down$RNAseq.id %in% failedChem, ] 
 
+draw_fusionout <- function( fuse2.2, framethis = "in.frame", qcout) {
+  
 fuse_out2 = fuse2.2[ ! fuse2.2$RNAseq.id %in% failedChem, ]
 fuse_out2$right = gsub ( ".*-", '',fuse_out2$fusion)
-fuse_out2 = merge ( fuse_out2, up.all_qc, by.x=c ("right","RNAseq.id"), c( "gene","RNAseq.id" ) )
-fuse_out2 = fuse_out2[  fuse_out2$frameness %in% c("in.frame" ),  ]
+fuse_out2 = merge ( fuse_out2, qcout, by.x=c ("right","RNAseq.id"), c( "gene","RNAseq.id" ) )
+fuse_out2 = fuse_out2[  fuse_out2$frameness %in% framethis,  ]
 
 diff = c()
 for ( r in 1:nrow ( fuse_out2)){
@@ -6629,11 +6632,6 @@ fuse_out2$delta = diff
 fuse_out2 = fuse_out2[ order ( fuse_out2$fusion, fuse_out2$delta ), ]
 fuse_out2$fusion = factor ( fuse_out2$fusion, levels = unique ( fuse_out2$fusion) )
 
-fuse_out2$c = ''; 
-fuse_out2$c[1:17] = "1"
-fuse_out2$c[18:35] = "2"
-fuse_out2$c[36:53] = "3"
-fuse_out2$c[54:71] = "4"
 
 
 
@@ -6675,7 +6673,15 @@ fuse_outlier = ggplot( fuse_out2  , aes(x=reorder_within (  RNAseq.id, delta ,  
     ,size=4
   ) +  theme(strip.text.x = element_text(size = 20) )
 
+return ( fuse_outlier )
+}
 
+
+fuse2.2 = merge ( fuse2.1, temp.all[ , c("uid", "type")], by= "uid")
+
+fuse_outlier = draw_fusionout(fuse2.2, "in.frame", qcout = up.all_qc)
+# there are zero out.of.frame fusions that 3' is an outlier. 
+# fuse_outlier_down_outframe = draw_fusionout(fuse2.2, framethis = "out.of.frame", qcout = down.all_qc )
 
 ```
 
