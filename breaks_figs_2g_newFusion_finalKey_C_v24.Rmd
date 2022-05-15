@@ -8761,7 +8761,7 @@ colnames ( tally ) = c(  "Drug Level", "Freq" )
 level_data = setNames(tally$Freq, tally$`Drug Level`)
 drug.color["NONE"] = "grey" 
 
-waffle::waffle(level_data, rows=12 , size=1, 
+waffle_drugs = waffle::waffle(level_data, rows=12 , size=1, 
        colors= c( "grey", "#990000", "#8DB8E0", "#EBCF46" ), 
        title="Drug Levels", 
        xlab="",  legend_pos = "bottom") +
@@ -8922,18 +8922,38 @@ lolli.down= ggplot(lolli.down, aes(x=cancer.subtype, y=med)) +
 
 ```{r}
 # are there any trends in treated vs. untreated?  
+# 5.14.2022 updating plots for outlier trends. 
 # biopsy vs met ? 
 
-outlier.both2 = outlier.both 
-outlier.both2$total.up = ifelse( outlier.both2$total.up < 0, outlier.both2$total.up *-1, outlier.both2$total.up) 
+
+#outlier.both2 = outlier.both 
+#outlier.both2$total.up = ifelse( outlier.both2$total.up < 0, outlier.both2$total.up *-1, outlier.both2$total.up) 
+# dont use outlier.both, probably doesnt matter but its confusing 
+
+temp_qc.all = up.all_qc
+temp_qc.all$type = "UP"
+temp_qc.all2 = down.all_qc
+temp_qc.all2$type = "DOWN"
+
+outlier.both2= rbind ( temp_qc.all, temp_qc.all2 )
+
 outlier.both2 = merge ( outlier.both2, trueseq.key[, c("RNAseq.id", "treatment", "sample.type")], by="RNAseq.id")
 outlier.both2$sample.type = gsub ( ".*_", "", outlier.both2$sample.type )
 
-out_treat = outlier.both2  %>% dplyr::group_by(type, RNAseq.id, treatment) %>%
+# remove unknown 
+
+outlier.both2 = outlier.both2[outlier.both2$treatment != "Unknown",  ]
+outlier.both2$type = ifelse ( outlier.both2$type == "UP", ".UP", "DOWN")
+outlier.both2 = merge ( outlier.both2, genelist[ , c("gene", "cosmic.annot")], by="gene", all.x=T, all.y=FALSE)
+outlier.both2[is.na(outlier.both2)] <- "no_cancer"
+
+out_treat = outlier.both2 %>% dplyr::group_by( type, RNAseq.id, treatment) %>%
   dplyr::summarise(
-    Total = sum(total.up)  
-    
-  ) %>% ggplot(. , aes(y=Total, x=treatment))+
+    Total = n()  
+  ) %>% dplyr::group_by( type, treatment) %>% arrange ( desc ( type) ) %>% 
+  dplyr::mutate( Mean = mean ( Total) ,
+                 #type = factor ( type, levels = c(".UP", "DOWN"))
+                 ) %>% ggplot(. , aes(y=log2 ( Total), x=treatment))+
   geom_quasirandom(aes(fill = treatment ), size = 3, shape = 21, alpha = .5) +
   theme_bw() +
   xlab("") +
@@ -8946,16 +8966,23 @@ out_treat = outlier.both2  %>% dplyr::group_by(type, RNAseq.id, treatment) %>%
         axis.title.y     = element_text(size=22), 
         legend.text      =element_text(size=12)
   ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") +
-  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") )) + facet_grid(type~.  )
+  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") )) + facet_grid( type ~.  )
+
+out_treat = my_add_pval(out_treat, pairs = list(c(1, 2)), test='wilcox.test', textsize = 10, response = 'Total' )
+
+out_treat
 
 
 
-out_type = outlier.both2  %>% dplyr::group_by(type, RNAseq.id, sample.type) %>%
+
+out_treat_oncogene = outlier.both2[outlier.both2$cosmic.annot == "ONCOGENE", ] %>% dplyr::group_by( type, RNAseq.id, treatment) %>%
   dplyr::summarise(
-    Total = sum(total.up)  
-    
-  ) %>% ggplot(. , aes(y=Total, x=sample.type))+
-  geom_quasirandom(aes(fill = sample.type ), size = 3, shape = 21, alpha = .5) +
+    Total = n()  
+  ) %>% dplyr::group_by( type, treatment) %>% arrange ( desc ( type) ) %>% 
+  dplyr::mutate( Mean = mean ( Total) ,
+                 #type = factor ( type, levels = c(".UP", "DOWN"))
+                 ) %>% ggplot(. , aes(y=log2 ( Total), x=treatment))+
+  geom_quasirandom(aes(fill = treatment ), size = 3, shape = 21, alpha = .5) +
   theme_bw() +
   xlab("") +
   theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
@@ -8967,7 +8994,38 @@ out_type = outlier.both2  %>% dplyr::group_by(type, RNAseq.id, sample.type) %>%
         axis.title.y     = element_text(size=22), 
         legend.text      =element_text(size=12)
   ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") +
-  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") )) + facet_grid(type~.  )
+  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") )) + facet_grid( type ~.  )
+
+out_treat_oncogene = my_add_pval(out_treat_oncogene, pairs = list(c(1, 2)), test='wilcox.test', textsize = 10, response = 'Total' )
+
+out_treat_oncogene
+
+
+
+out_treat_tsg= outlier.both2[outlier.both2$cosmic.annot == "TSG", ] %>% dplyr::group_by( type, RNAseq.id, treatment) %>%
+  dplyr::summarise(
+    Total = n()  
+  ) %>% dplyr::group_by( type, treatment) %>% arrange ( desc ( type) ) %>% 
+  dplyr::mutate( Mean = mean ( Total) ,
+                 #type = factor ( type, levels = c(".UP", "DOWN"))
+                 ) %>% ggplot(. , aes(y=log2 ( Total), x=treatment))+
+  geom_quasirandom(aes(fill = treatment ), size = 3, shape = 21, alpha = .5) +
+  theme_bw() +
+  xlab("") +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=22),
+        
+        axis.title.y     = element_text(size=22), 
+        legend.text      =element_text(size=12)
+  ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") +
+  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") )) + facet_grid( type ~.  )
+
+out_treat_tsg = my_add_pval(out_treat_tsg, pairs = list(c(1, 2)), test='wilcox.test', textsize = 10, response = 'Total' )
+
+out_treat_tsg
 
 
 
