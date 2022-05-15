@@ -7793,7 +7793,7 @@ temp = merge ( temp, rna.key[, c("RNAseq.id", "cancer.subtype")], by="RNAseq.id"
 
 table ( temp[ temp$gene == "PAX7", ]$cancer.subtype)
 table ( temp[ temp$gene == "JAK1", ]$cancer.subtype)
-
+table ( temp[ temp$gene == "COL2A1", ]$cancer.subtype)
 ```
 
 
