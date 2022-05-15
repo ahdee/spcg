@@ -8937,8 +8937,12 @@ temp_qc.all2$type = "DOWN"
 
 outlier.both2= rbind ( temp_qc.all, temp_qc.all2 )
 
-outlier.both2 = merge ( outlier.both2, trueseq.key[, c("RNAseq.id", "treatment", "sample.type")], by="RNAseq.id")
+outlier.both2 = merge ( outlier.both2, trueseq.key[, c("RNAseq.id", "treatment", "sample.type", "sample.classification")], by="RNAseq.id")
 outlier.both2$sample.type = gsub ( ".*_", "", outlier.both2$sample.type )
+
+outlier.both2$sample.classification = gsub ( "NonPrimary" , "Metastasis", outlier.both2$sample.classification )
+outlier.both2$sample.classification = gsub ( "Primary" , ".Primary", outlier.both2$sample.classification )
+outlier.both2$sample.classification = factor ( outlier.both2$sample.classification, c(  ".Primary", "Metastasis"    ))
 
 # remove unknown 
 
@@ -9031,12 +9035,40 @@ out_treat_tsg
 # restart here, need to do classification now primary vs metas
 
 
+out_class = outlier.both2 %>% dplyr::group_by( type, RNAseq.id, sample.classification) %>%
+  dplyr::summarise(
+    Total = log2 ( n() )  
+  ) %>% dplyr::group_by( type, sample.classification) %>% arrange ( desc ( type) ) %>% 
+  dplyr::mutate( Mean = mean ( Total) ,
+                 #type = factor ( type, levels = c(".UP", "DOWN"))
+                 ) %>% ggplot(. , aes(y=Total, x=sample.classification))+
+  geom_quasirandom(aes(fill = sample.classification ), size = 6, shape = 21, alpha = .5) +
+  theme_bw() +
+  xlab("") +  ylab("log2 ( Total )") +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=22),
+        
+        axis.title.y     = element_text(size=22), 
+        legend.text      =element_text(size=12)
+  ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") +
+  scale_fill_manual(values = unique (brewer.pal(7, "Accent") )) + facet_grid( type ~. , scales = "free" ) +
+  theme(strip.text.y = element_text(size = 30))
+
+out_class = my_add_pval(out_class, pairs = list(c(1, 2)), test='wilcox.test', textsize = 8, response = 'Total' )
+
+out_class # change facet size here.
+
+
+
 
 ```
 
 ### Outlier Trends
 ```{r fig=TRUE,fig.width=20, fig.height=10, echo=FALSE, include=TRUE }
-out_type + ( out_treat + ylab("")  )+ plot_layout(widths =c ( .7,.3 ) )
+out_treat + ( out_class + ylab("")) + plot_layout(widths =c ( .5,.5 ) )
 
 
 ```
