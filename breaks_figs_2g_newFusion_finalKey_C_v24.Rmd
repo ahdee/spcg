@@ -7128,7 +7128,7 @@ this.down_tab = down.all_qc [ down.all_qc$gene %in% unique ( c ( combolist) ),  
 
 this.up_tab = merge ( this.up_tab, rna.key[ , c("RNAseq.id", "cancer.subtype")], by="RNAseq.id")
 
-this.up_tab2 =  this.up_tab[this.up_tab$role %in%  c (  "oncogene") | this.up_tab$gene %in% drug.up$gene, ]   %>% dplyr::group_by (cancer.subtype, gene) %>%
+this.up_tab2 =  this.up_tab[this.up_tab$role %in%  c (  "oncogene") ,  ]   %>% dplyr::group_by (cancer.subtype, gene) %>%
  #this.up_tab2 =  this.up_tab %>% dplyr::group_by (cancer.subtype, gene) %>%
  dplyr::summarise(
     total = n ( ) # 
@@ -7182,7 +7182,7 @@ up_oncogene = ggplot( up.out  , aes(x=reorder_within ( gene, percent , cancer.su
 ```{r}
 ## down TSG 
 
-this.down_tab = down.all_qc [ down.all_qc$gene %in% unique ( c ( drug.down$gene, drug.down$gene, combolist) ),  ]
+this.down_tab = down.all_qc [ down.all_qc$gene %in% unique ( c ( combolist) ),  ]
 
 
 this.down_tab = merge ( this.down_tab, rna.key[ , c("RNAseq.id", "cancer.subtype")], by="RNAseq.id")
@@ -7554,7 +7554,7 @@ facet_grid(cancer.subtype~., scales = "free" , space = "free" )
 
 
 ```{r}
-top_kinase +top_kinase_family
+top_kinase # what happend to +top_kinase_family
 ```
 
 
@@ -7699,11 +7699,12 @@ ggplot( . , aes(x=reorder_within ( gene, per , cancer.subtype) , y=per, fill=cos
 # which one genes shows up the most 
 nocancer_tab_f = nocancer_tab %>% group_by(  gene ) %>% 
   summarise ( 
-    total = n()
+    total = n(), 
+     total_freq = sum(Freq)
     ) %>% arrange(desc(total)) %>% data.frame ()
 
 # which genes are present in more than 6 or more cancer subtypes? 
-nocancer_tab_f2 = nocancer_tab_f[nocancer_tab_f$total >=6, ]
+nocancer_tab_f2 = nocancer_tab_f[nocancer_tab_f$total >=6 | nocancer_tab_f >= 10, ]
 
 nocancer_tab_f2  = merge ( nocancer_tab_f2 , nocancer_tab[ , c("gene", "cancer.subtype", "per")], by="gene"  )
 nocancer_tab_f2$gene = as.character ( nocancer_tab_f2$gene)
@@ -7743,11 +7744,12 @@ nocancer_tab_f2_plot = ggplot(data=nocancer_tab_f2, aes(x=gene, y=1,  fill=cance
 
 cancer_tab_f = cancer_tab %>% group_by(  gene ) %>% 
   summarise ( 
-    total = n()
+    total = n(),
+    total_freq = sum(Freq)
   ) %>% arrange(desc(total)) %>% data.frame ()
 
 # which genes are present in more than 6 or more cancer subtypes? 
-cancer_tab_f2 = cancer_tab_f[cancer_tab_f$total >=3, ]
+cancer_tab_f2 = cancer_tab_f[cancer_tab_f$total >=3 | cancer_tab_f$total_freq >= 10 , ]
 
 cancer_tab_f2  = merge ( cancer_tab_f2 , cancer_tab[ , c("gene", "cancer.subtype", "per")], by="gene"  )
 cancer_tab_f2$gene = as.character ( cancer_tab_f2$gene)
@@ -7784,9 +7786,13 @@ cancer_tab_f2_plot = ggplot(data=cancer_tab_f2, aes(x=gene, y=1,  fill=cancer.su
   scale_y_discrete(expand = c(0, 0))
 
 
+# sanity check 
 
+temp = up.all_qc
+temp = merge ( temp, rna.key[, c("RNAseq.id", "cancer.subtype")], by="RNAseq.id")
 
-
+table ( temp[ temp$gene == "PAX7", ]$cancer.subtype)
+table ( temp[ temp$gene == "JAK1", ]$cancer.subtype)
 
 ```
 
