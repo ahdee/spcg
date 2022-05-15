@@ -262,8 +262,9 @@ CCCCCCCCCCCC##
 CCCCCCCCCCCC##
 CCCCCCCCCCCC##
 "
+pdf(paste0(spcg_fig, "/outlier_drugs.pdf"), width=17, height=12)
 l1_d + l2_d + l3_d + plot_layout(design = lay2)
-
+dev.off()
 
 ### outlier kinase 
 pdf(paste0(spcg_fig, "/outlier_kinase.pdf"), width=9, height=7.7)
@@ -457,6 +458,9 @@ well.known.diag
 
 
 # outlier 
+
+out_family_grid
+
 up_plots$pie.out2 + down_plots$pie.out2
 
 (up_oncogene + down_tsg ) / 
@@ -471,6 +475,26 @@ nocancer_tab_f2_plot
 
 
 out.total.bar.up
+
+top_drug
+drugpie_t1
+waffle_drugs
+
+lay2 = "
+AAAAAAAAAAAA##
+AAAAAAAAAAAA##
+###BB#########
+###BB#########
+CCCCCCCCCCCC##
+CCCCCCCCCCCC##
+CCCCCCCCCCCC##
+CCCCCCCCCCCC##
+"
+l1_d + l2_d + l3_d + plot_layout(design = lay2)
+
+
+
+( lolli.up + ggtitle ("Oncogene Up" ) )  | fusion.plot$lolli_med + ggtitle ( "Fusions (in.frame )")
 
 
 

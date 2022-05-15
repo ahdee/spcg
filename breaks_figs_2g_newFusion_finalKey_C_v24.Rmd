@@ -7527,7 +7527,7 @@ ylab("") +
 xlab("") + 
 theme(legend.position="none",  legend.key = element_blank(),
       
-      axis.text.y = element_text(size= 7.5 ),
+      axis.text.y = element_text(size= 15 ),
       axis.text.x = element_text(angle = 0, size= 15 ),
       axis.title.x = element_text(size=12),
       axis.title.y     = element_text(size=20), 
@@ -7538,7 +7538,8 @@ scale_x_reordered() +
 scale_fill_manual( values= subcolor ) + coord_flip() + ggtitle ( "Recurrent UP Kinase Gene") +
 # scale_y_continuous(breaks = function(x) unique(floor(pretty(seq(0, (max(x) + 1) * 1.1))))) + # plot in intergers
 scale_y_continuous(expand = expansion(mult = c(0, .1))) +
-facet_grid(cancer.subtype~., scales = "free" , space = "free" )
+facet_grid(cancer.subtype~., scales = "free" , space = "free" ) +
+   theme(strip.text.y = element_text(size = 15, colour = "black", angle = 0))
 
 
 ## get kinase family 
@@ -8137,7 +8138,8 @@ pie.out2 =  ggplot(m1, aes(x="", y=per, fill=alteration )) +
           
           axis.title.y     = element_text(size=20), 
           legend.text      =element_text(size=20), 
-         legend.key.size = unit(2, 'cm'),
+         legend.key.size = unit(1.5, 'cm'),
+         legend.title = element_blank(),
          plot.margin=grid::unit(c(0,0,0,0), "mm")
     )+  facet_wrap  (label~., ncol = col  ) + 
   theme(strip.text.x = element_text(size = 15, colour = "black", angle = 0)) +
@@ -8193,7 +8195,7 @@ down_plots = plot_updown( tab.outlier = tab.outlier, dir = "down", col = 3 , cp 
 ## OUTLIER UP (oncogene), DOWN ( TSG)
 
 ```{r}
-up_plots$pie.out2 + down_plots$pie.out2
+up_plots$pie.out2 + down_plots$pie.out2 
 
 ```
 
@@ -9032,7 +9034,7 @@ out_treat_tsg = my_add_pval(out_treat_tsg, pairs = list(c(1, 2)), test='wilcox.t
 
 out_treat_tsg
 
-# restart here, need to do classification now primary vs metas
+
 
 
 out_class = outlier.both2 %>% dplyr::group_by( type, RNAseq.id, sample.classification) %>%
