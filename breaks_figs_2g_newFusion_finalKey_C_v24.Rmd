@@ -13402,7 +13402,7 @@ ht_long_fusion <- ComplexHeatmap::Heatmap(  data.matrix( cm2 )
 
 
 
-return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_total_fusion, temporal.key=temporal.key , modkey =fusion_total2  ))
+return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_total_fusion, temporal.key=temporal.key , modkey =fusion_total2, long_out=long_out  ))
 
 
 }
