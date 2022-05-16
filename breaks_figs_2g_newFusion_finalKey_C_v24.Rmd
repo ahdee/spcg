@@ -13407,9 +13407,110 @@ return ( list ( ht=ht_long_fusion, long_info_details = long_info, singleg =long_
 
 }
 
-fuse_longout = compute_longi(  fusion_mod  )
+# update 5.16.2022
+# take from compute_longi and plot single pid. 
+longi_pid <- function ( dff, pid , gtitle = ""){
+  
+  # draw table 
+  
+  temp =  dff$long_info_details [ dff$long_info_details$pid == pid, ]
+
+  table_1 <- kable ( temp
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(1, bold = T, border_right = T)  %>% 
+  row_spec( which ( temp$type == "primary_only" ), color = "black", background = "#9fbad6") %>%
+  row_spec( which ( temp$type == "secondary_only" ), color = "black", background = "#2377cf") %>%
+  row_spec( which ( temp$type == "both" ), color = "black", background = "#68717a") 
+
+  t1 = dff$modkey[dff$modkey$patient.id == pid,  ]
+  
+  gplot1 = t1  %>% 
+  dplyr::group_by(patient.id, temporal.order ) %>% 
+  dplyr::mutate(
+    total_fusion = median(total_fusion)
+  ) %>% 
+  ggplot( . , aes(x = temporal.order, y = total_fusion, color = cancer.subtype, group = patient.id)) + 
+  geom_point(size=6 , alpha = 0.75    ) + geom_line() + ylab(" total ")+ xlab("temporal.order: RNA-seq") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))  +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 12 ),
+        axis.text.x = element_text(angle = 0, size= 12 ),
+        axis.title.x = element_text(size=18),
+        
+        axis.title.y     = element_text(size=18), 
+        legend.text      =element_text(size=12)
+  ) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black"))+ scale_color_manual(values= subcolor) +
+    scale_x_continuous(  breaks=c(1, 2) ) +
+  scale_y_continuous(limits = c(0, NA) ) + ggtitle(gtitle)
+  
+return ( list ( plot = gplot1 ,
+                table = table_1
+                )
+                )  
+  
+}
+
+# draw table for single longi 
+# assume key has the following:  "RNAseq.id" ,"patient.id"  ,"sex"  , "diagnosis"   ,   "sample.type"  ,  "treatment"  , "temporal.order"
+
+
+draw_key_longi <- function ( pid , rkey ){
+  
+  temp = rkey[ rkey$patient.id == pid, c( "RNAseq.id" ,"patient.id"  ,"sex"  , "diagnosis"   ,   "sample.type"  ,  "treatment"  , "temporal.order" )]
+temp = temp [ order ( temp$temporal.order), ]
+temp = kable ( temp
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(1, bold = T, border_right = T)  
+
+return ( temp )
+
+}
+
+# output can be used to draw single or entire cohort. 
+
+fuse_longout = compute_longi(fuse2.1, "fusion")
 outUP_longout = compute_longi( up.all_qc[ up.all_qc$both == "OUTLIER_HIGH" & up.all_qc$gene %in%  genelist$gene, ] , "gene" )
 
+# example of single draw 
+outUP_longout_1 = longi_pid(dff=outUP_longout, pid="728", gtitle = "Outlier UP, Cancer Genes")
+draw_key_longi("728", rna.key)
+
+# draw cohort. 
+
+ outUP_longout$modkey  %>% 
+  dplyr::group_by(patient.id, temporal.order ) %>% 
+  dplyr::mutate(
+    total_fusion = median(total_fusion)
+  ) %>% 
+  ggplot( . , aes(x = temporal.order, y = total_fusion, color = cancer.subtype, group = patient.id)) + 
+  geom_point(size=6 , alpha = 0.75    ) + geom_line() + ylab(" total ")+ xlab("temporal.order: RNA-seq") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))  +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 12 ),
+        axis.text.x = element_text(angle = 0, size= 12 ),
+        axis.title.x = element_text(size=18),
+        
+        axis.title.y     = element_text(size=18), 
+        legend.text      =element_text(size=12)
+  ) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black"))+ scale_color_manual(values= subcolor) +
+     facet_wrap(   cancer.subtype  ~. , scale="free") +   scale_x_continuous(  breaks=c(1, 2) ) +
+  scale_y_continuous(limits = c(0, NA) ) + theme(strip.text.x = element_text(size = 15, colour = "black", angle = 0))
+   
+   
+   
+
+
+# good way to find what is the most frequently upregulated in secondary. 
 temp = data.frame ( table ( outUP_longout$long_info_details [ outUP_longout$long_info_details$type == "secondary_only", ]$info ) )
 temp = temp [ order( -temp$Freq), ]
 
