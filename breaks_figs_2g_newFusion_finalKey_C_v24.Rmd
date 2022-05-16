@@ -13476,14 +13476,55 @@ return ( temp )
 
 fuse_longout = compute_longi(fuse2.1, "fusion")
 outUP_longout = compute_longi( up.all_qc[ up.all_qc$both == "OUTLIER_HIGH" & up.all_qc$gene %in%  genelist$gene, ] , "gene" )
-
+outUP_longout_nocancer = compute_longi( up.all_qc[ up.all_qc$both == "OUTLIER_HIGH" & !up.all_qc$gene %in%  genelist$gene, ] , "gene" )
 # example of single draw 
 outUP_longout_1 = longi_pid(dff=outUP_longout, pid="728", gtitle = "Outlier UP, Cancer Genes")
 draw_key_longi("728", rna.key)
 
 # draw cohort. 
 
- outUP_longout$modkey  %>% 
+draw ( outUP_longout$ht)
+# create pie chart for it. 
+tally = data.frame ( table ( outUP_longout$long_info_details$type )) 
+tally$Var1 = gsub (  "both", "shared", tally$Var1)
+
+outUP_cancerOnly_pie = make.pie2(
+  ftype.freq = tally 
+  ,name.first = "Type" # label for legend 
+  , title = "UP Cancer Genes" 
+  , cc =  c( "primary_only" = '#2c7ac2', 'secondary_only' ='#1f628b' , shared = '#848586') 
+  , leg.pos = "none"
+  ,pietext= 10
+  ,legtext = 20 
+  , dir = -1 
+  , percent = 1
+) 
+
+draw ( outUP_longout_nocancer$ht)
+
+tally = data.frame ( table ( outUP_longout_nocancer$long_info_details$type )) 
+tally$Var1 = gsub (  "both", "shared", tally$Var1)
+
+outUP_non_cancer_pie = make.pie2(
+  ftype.freq = tally 
+  ,name.first = "Type" # label for legend 
+  , title = "UP Non-Cancer Genes" 
+  , cc =  c( "primary_only" = '#2c7ac2', 'secondary_only' ='#1f628b' , shared = '#848586') 
+  , leg.pos = "bottom"
+  ,pietext= 10
+  ,legtext = 20 
+  , dir = -1 
+  , percent = 1
+) 
+ 
+ 
+
+outUP_cancerOnly_pie /  outUP_non_cancer_pie
+
+
+
+
+faceted_longi_UP <- outUP_longout$modkey  %>% 
   dplyr::group_by(patient.id, temporal.order ) %>% 
   dplyr::mutate(
     total_fusion = median(total_fusion)
