@@ -190,12 +190,20 @@ pdf(paste0(spcg_fig, "/fusion_scatter.pdf"), width=12, height=10)
 
 (right_in$expfusion.scat.plot + ggtitle ( "3' Gene in-frame") + ylim(miny,maxy) + xlim(minx, maxx) + theme( legend.position = "none")  )+
   (right_out$expfusion.scat.plot + ggtitle ( "3' Gene out-of-frame") + ylim(miny,maxy)  + xlim(minx, maxx) + theme( legend.position = "none") ) +
-  plot_layout(design = layout) +
+ 
   (right_in$pie.ratio + ggtitle ( "") + theme( legend.position = "right")  )+
-  (right_out$pie.ratio + ggtitle ( "") + theme( legend.position = "right") )
+  (right_out$pie.ratio + ggtitle ( "") + theme( legend.position = "right") ) +
+  plot_layout(design = layout) 
 
 
 dev.off()
+
+
+
+
+
+
+
 
 pdf(paste0(spcg_fig, "/fusion_scatter_violin.pdf"), width=10, height=8)
 (right_in$exp.fusion.plot + ggtitle ( "") + theme( legend.position = "right")  ) 

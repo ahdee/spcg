@@ -320,11 +320,19 @@ get.info <- function ( tube, rk ){
 # or info[[tree.best]]$neighbor$Row.names
 
 
-test.id = "K1"
-gene.id = "KRAS"
+test.id = "BY1"
+gene.id = "FGFR1"
+type_analysis = "tree.xcell" # "tree.xcell" # txn2.best
+
+if ( type_analysis == "tree.xcell"){
+  n_near = colnames ( info[[type_analysis]]  )
+}else {
+  n_near =  info[[type_analysis]]  
+}
+
 id_cancertype = rna.key[ rna.key$RNAseq.id == test.id, ]$cancer.type
 info = get.info ( test.id , rna.key )
-tg = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , info[["txn2.best"]] )  ) )
+tg = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , n_near  )  ) )
                     ,  test.this=unique ( c ( gene.id ) ) , label=test.id , tpm.df= counts, tpm_id = tpm [ , test.id, drop=F ],
                     size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#91badb', gtitle="Disease") 
 

@@ -10250,6 +10250,10 @@ daf_vs_raf = ggplot(cosmic, aes(x=TUMOR.AF, y= RNA_ALT_AF)) +
           , axis.line = element_line(colour = "black") ) +
   scale_y_continuous(expand = expansion(mult = c(0, .01)))
 
+
+raf_examples = cosmic[ cosmic$is.sig == "sig" & cosmic$is.cancer == "yes" & cosmic$balance == "EXTREME_HIGH" & cosmic$VEP_Worst_Impact_simple == "High/Moderate", ] 
+View ( raf_examples )
+
 # add porportion
 
 af_port = data.frame (  table ( cosmic [ , c ( "balance_simple", "cancer.subtype") ]  ), stringsAsFactors = FALSE )  
