@@ -9064,6 +9064,54 @@ out_class = my_add_pval(out_class, pairs = list(c(1, 2)), test='wilcox.test', te
 out_class # change facet size here.
 
 
+# calculate entropy 
+se = readRDS("/data/SUMMARY/TPM/shannonEntropy.tpm.rds")
+se = merge ( outlier.both2[!duplicated ( outlier.both2$RNAseq.id),  ],se, by.x="RNAseq.id", by.y="th_sampleid" )
+
+sep_class = ggplot(se , aes(y=se, x=sample.classification))+
+  geom_quasirandom(aes(fill = sample.classification ), size = 6, shape = 21, alpha = .5) +
+  theme_bw() +
+  xlab("") +  ylab("Shannon Entropy  ") +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=22),
+        
+        axis.title.y     = element_text(size=22), 
+        legend.text      =element_text(size=12)
+  ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") +
+  scale_fill_manual(values = unique (brewer.pal(7, "Accent") ))  +
+  theme(strip.text.y = element_text(size = 30))
+
+sep_class = my_add_pval(sep_class, pairs = list(c(1, 2)), test='wilcox.test', textsize = 8, response = 'se' )
+
+sep_class # change facet size here.
+
+
+sep_treat = ggplot(se , aes(y=se, x=treatment))+
+  geom_quasirandom(aes(fill = treatment ), size = 6, shape = 21, alpha = .5) +
+  theme_bw() +
+  xlab("") +  ylab(" Shannon Entropy  ") +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 20 ),
+        axis.text.x = element_text(angle = 0, size= 20 ),
+        axis.title.x = element_text(size=22),
+        
+        axis.title.y     = element_text(size=22), 
+        legend.text      =element_text(size=12)
+  ) + stat_summary(fun.y='mean', geom = "crossbar", width = .5, color="black") +
+  scale_fill_manual(values = unique (brewer.pal(7, "Dark2") ))   +
+  theme(strip.text.y = element_text(size = 30))
+
+sep_treat = my_add_pval(sep_treat, pairs = list(c(1, 2)), test='wilcox.test', textsize = 8, response = 'se' )
+
+sep_treat # change facet size here.
+
+
+sep_treat + sep_class
+
 
 
 ```
@@ -10224,7 +10272,7 @@ total_nosig = nrow ( cosmic[ cosmic$balance_simple == "no.sig", ])
 total_low =  nrow ( cosmic[ cosmic$balance_simple == "LOW", ]) 
 
 daf_vs_raf = ggplot(cosmic, aes(x=TUMOR.AF, y= RNA_ALT_AF)) + 
-  geom_point( aes ( color=balance_simple , alpha=balance), position=position_jitter(h=0.01, w=0.01)  )  + 
+  geom_point( aes ( color=balance_simple , alpha=balance), position=position_jitter(h=0.01, w=0.01) , size=3.5  )  + 
   scale_color_manual(values = rafdaf_color_simple  
                      , labels = c(HIGH=paste0 ( "RAF > DAF (" , total_high, ")") , 
                                 LOW=paste0 ( "RAF < DAF (", total_low, ")" ) , 
@@ -10250,11 +10298,41 @@ daf_vs_raf = ggplot(cosmic, aes(x=TUMOR.AF, y= RNA_ALT_AF)) +
           , axis.line = element_line(colour = "black") ) +
   scale_y_continuous(expand = expansion(mult = c(0, .01)))
 
+# Examples of RAF  and DAFs
 
+#### RAF > DAF cancer. 
 raf_examples = cosmic[ cosmic$is.sig == "sig" & cosmic$is.cancer == "yes" & cosmic$balance == "EXTREME_HIGH" & cosmic$VEP_Worst_Impact_simple == "High/Moderate", ] 
-View ( raf_examples )
+ head ( raf_examples[ , c(  "RNAseq.id", "cancer.subtype" , "chrom","pos" ,"ref", "alt"  , "RNA_DEPTH" , "RNA_REF_COUNT"    , "RNA_ALT_COUNT" ,  "RNA_ALT_AF" , "TUMOR.AF", "RNA_PVALUE"  , "VEP_Worst_Impact_simple" , "VEP_Worst_Gene", "CLINVAR_MATCH", "COSMIC_MATCH" )] )
+ 
+ temp = raf_examples[ , c(  "RNAseq.id", "cancer.subtype" , "chrom","pos" ,"ref", "alt", "RNA_DEPTH" , "RNA_REF_COUNT"    , "RNA_ALT_COUNT" ,  "RNA_ALT_AF" , "TUMOR.AF"  , "RNA_PVALUE"  , "VEP_Worst_Impact_simple" , "VEP_Worst_Gene" , "CLINVAR_MATCH", "COSMIC_MATCH")] 
 
-# add porportion
+ temp  =  data.frame ( lapply ( temp, function (x) if(is.numeric(x)) { round ( x, 2)} else x  )  )
+ colnames ( temp)[13:14] = c("impact","gene")
+ kable ( temp[grepl("TP53|ABL1|COL|NRAS", temp$gene) , ]
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(c(10,11), background = "#d9dbdb")  %>%
+  column_spec(c(5,6), background = "#98b2b8")  
+
+#### RAF > DAF not cancer 
+raf_examples = cosmic[ cosmic$is.sig == "sig" & cosmic$is.cancer == "no" & cosmic$balance == "EXTREME_HIGH" & cosmic$VEP_Worst_Impact_simple == "High/Moderate", ] 
+ head ( raf_examples[ , c(  "RNAseq.id", "cancer.subtype" , "chrom","pos" ,"ref", "alt"  , "RNA_DEPTH" , "RNA_REF_COUNT"    , "RNA_ALT_COUNT" ,  "RNA_ALT_AF" , "TUMOR.AF", "RNA_PVALUE"  , "VEP_Worst_Impact_simple" , "VEP_Worst_Gene" , "CLINVAR_MATCH", "COSMIC_MATCH" )] )
+ 
+ temp = raf_examples[ , c(  "RNAseq.id", "cancer.subtype" , "chrom","pos" ,"ref", "alt", "RNA_DEPTH" , "RNA_REF_COUNT"    , "RNA_ALT_COUNT" ,  "RNA_ALT_AF" , "TUMOR.AF"  , "RNA_PVALUE"  , "VEP_Worst_Impact_simple" , "VEP_Worst_Gene" , "CLINVAR_MATCH", "COSMIC_MATCH")] 
+
+ temp  =  data.frame ( lapply ( temp, function (x) if(is.numeric(x)) { round ( x, 2)} else x  )  )
+ colnames ( temp)[13:14] = c("impact","gene")
+temp = temp [ order ( -temp$RNA_ALT_AF), ]
+test_this = c("CDC42EP2", "MED24","CSMD1", 'VWA2', 'COL1A1')
+  kable ( temp[temp$gene %in% test_this  & temp$COSMIC_MATCH == "", ]
+        , format="html", row.names=F, table.attr = "style='width:10%;'" ) %>%
+  kable_classic(full_width = F, position = "center",)  %>%
+  column_spec(c(10,11), background = "#d9dbdb")  %>%
+  column_spec(c(5,6), background = "#98b2b8")   
+ 
+ 
+## end examples 
+ 
 
 af_port = data.frame (  table ( cosmic [ , c ( "balance_simple", "cancer.subtype") ]  ), stringsAsFactors = FALSE )  
 af_port$balance_simple = factor (  af_port$balance_simple , levels = c( "HIGH", "no.sig", "LOW") )
