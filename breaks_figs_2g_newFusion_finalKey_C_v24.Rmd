@@ -4162,7 +4162,17 @@ fusion_cosmic_right =  fuse2[fuse2$frameness == "in.frame" | fuse2$frameness == 
         , plot.title = element_text(size = 12, face = "bold")
   ) + coord_flip() + scale_fill_manual(values =c(  ggsci::pal_jco()(10) )  )
 
+# wilcox test restart 
 
+test_is_cancer = fuse2[(fuse2$frameness == "in.frame" | fuse2$frameness == "out.of.frame") & fuse2$is.cancer == "yes", ] %>%
+  group_by ( frameness, RNAseq.id) %>% summarise( total = n())
+
+ x1 = test_is_cancer[test_is_cancer$frameness == "in.frame", ]$total
+  x2 = test_is_cancer[test_is_cancer$frameness == "out.of.frame", ]$total
+  wu = wilcox.test(x2,x1)
+  wu
+  
+  
 ### getting some examples. 
 
 
