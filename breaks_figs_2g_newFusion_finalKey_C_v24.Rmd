@@ -9065,7 +9065,7 @@ out_class # change facet size here.
 
 
 # calculate entropy 
-se = readRDS("/data/SUMMARY/TPM/shannonEntropy.tpm.rds")
+se = readRDS("/data/SUMMARY/TPM/shannonEntropy.tpm2.rds")
 se = merge ( outlier.both2[!duplicated ( outlier.both2$RNAseq.id),  ],se, by.x="RNAseq.id", by.y="th_sampleid" )
 
 sep_class = ggplot(se , aes(y=se, x=sample.classification))+
@@ -10626,6 +10626,31 @@ portion_consequence_stack = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=syno
     fill = guide_legend(title.position="top", title.vjust = .5, override.aes = list(size=10) , title ="RAF/DAF balance")
     ) + coord_flip()
 
+
+portion_consequence_stack_vert = ggplot(ap2 , aes(fill=balance_simple, y=Freq, x=synonymous ) )+ 
+    geom_bar(position="fill", stat="identity", width=1, color='#e8eded') +
+  # add text but position needs to be set to the same, which is filled
+    geom_text(aes(label = Freq), size=10,
+            position = position_fill(vjust = .7)
+  ) +  
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) + # remove gaps 
+   theme(legend.position="right",  legend.key = element_blank(),
+        axis.text.x = element_text(size= 20 , angle=30, hjust = 1), 
+        axis.text.y = element_text(size= 20 ),
+        axis.title.x = element_text(size=20),
+        axis.title.y     = element_text(size=20), 
+        legend.text      =element_text(size=12), 
+        panel.grid.major = element_blank()
+          , panel.grid.minor = element_blank()
+          ,panel.background = element_blank()
+          , axis.line = element_line(colour = "white") # this will give the illusion to fill in any remaining gaps
+          , panel.border=element_blank()
+        
+  ) + ylab("percentage") + xlab ( "") +
+  scale_fill_manual(values = rafdaf_color_simple  , labels = c(HIGH="RAF > DAF", LOW="RAF < DAF", no.sig="not significant")      ) +
+   guides(
+    fill = guide_legend(title.position="top", title.vjust = .5, override.aes = list(size=10) , title ="RAF/DAF balance")
+    )
 
 
 ### AF stack but comparing LOW vs HIGH  
@@ -13713,9 +13738,33 @@ faceted_longi_UP <- outUP_longout$modkey  %>%
      facet_wrap(   cancer.subtype  ~. , scale="free") +   scale_x_continuous(  breaks=c(1, 2) ) +
   scale_y_continuous(limits = c(0, NA) ) + theme(strip.text.x = element_text(size = 15, colour = "black", angle = 0))
    
-   
-   
 
+se_long= readRDS("/data/SUMMARY/TPM/shannonEntropy.tpm.rds")
+se_long = merge ( outUP_longout$modkey, se_long, by.x="RNAseq.id", by.y = "th_sampleid" ) 
+   
+se_long %>% 
+  dplyr::group_by(patient.id, temporal.order ) %>% 
+  dplyr::mutate(
+    mse = median(se)
+  ) %>% 
+  ggplot( . , aes(x = temporal.order, y = mse, color = cancer.subtype, group = patient.id)) + 
+  geom_point(size=6 , alpha = 0.75    ) + geom_line() + ylab(" total ")+ xlab("temporal.order: RNA-seq") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))  +
+  theme(legend.position="none", legend.title=element_blank(), legend.key = element_blank(),
+        
+        axis.text.y = element_text(size= 12 ),
+        axis.text.x = element_text(angle = 0, size= 12 ),
+        axis.title.x = element_text(size=18),
+        
+        axis.title.y     = element_text(size=18), 
+        legend.text      =element_text(size=12)
+  ) + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            axis.line = element_line(colour = "black"))+ scale_color_manual(values= subcolor) +
+     facet_wrap(   cancer.subtype  ~. , scale="free") +   scale_x_continuous(  breaks=c(1, 2) ) +
+  theme(strip.text.x = element_text(size = 15, colour = "black", angle = 0))
+   
 
 # good way to find what is the most frequently upregulated in secondary. 
 temp = data.frame ( table ( outUP_longout$long_info_details [ outUP_longout$long_info_details$type == "secondary_only", ]$info ) )
