@@ -320,18 +320,22 @@ get.info <- function ( tube, rk ){
 # or info[[tree.best]]$neighbor$Row.names
 
 
-test.id = "BY1"
-gene.id = "FGFR1"
-type_analysis = "tree.xcell" # "tree.xcell" # txn2.best
+test.id = "AL7"
+gene.id = "ASNS"
+type_analysis = "txn2.best" # "tree.xcell" # txn2.best
+
+info = get.info ( test.id , rna.key )
+
 
 if ( type_analysis == "tree.xcell"){
-  n_near = colnames ( info[[type_analysis]]  )
+  n_near = info$tree.best$neighbor$Row.names
 }else {
   n_near =  info[[type_analysis]]  
 }
 
 id_cancertype = rna.key[ rna.key$RNAseq.id == test.id, ]$cancer.type
-info = get.info ( test.id , rna.key )
+
+
 tg = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , n_near  )  ) )
                     ,  test.this=unique ( c ( gene.id ) ) , label=test.id , tpm.df= counts, tpm_id = tpm [ , test.id, drop=F ],
                     size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#91badb', gtitle="Disease") 
@@ -346,5 +350,58 @@ pan = by.pid.newtuk( ids=as.character ( unique ( c ( test.id , colnames(counts) 
                     ,  test.this=unique ( c ( gene.id ) ) , label=test.id , tpm.df= counts, tpm_id = tpm [ , test.id, drop=F ],
                     size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#8e8c8f', gtitle= "Pan") 
 
-tg$jplot / gg$jplot / pan$jplot
+
+gg_pan = by.pid.newtuk( ids= as.character ( unique ( c ( test.id, colnames ( gtex) )  ) ) 
+                        ,  test.this=gene.id , label=test.id , tpm.df= gtex, tpm_id = tpm [ , test.id, drop=F ],
+                        size=8, size2 = 15, sizeshape = 3.5, sizexy = 16, ap=.15 , low.border=1, cpp = '#88d134',  gtitle= "Normal")
+
+
+
+
+min = min ( c ( tg$violin$data$min, tg$violin$data$value.x , pan$violin$data$min, gg$violin$data$value.x )  ) 
+max = max ( c ( tg$violin$data$max , tg$violin$data$value.x,  pan$violin$data$max, gg$violin$data$value.x)  ) 
+
+ggarrange( 
+  
+  tg$jplot+ggtitle ( "Cancer Cohort") + scale_x_continuous(limits = c(min, max)) + 
+    theme ( axis.text.x=element_blank() ) +xlab("") +
+    theme(plot.margin = unit(c(0,0,0,0), "cm") )   + ylab ( "")
+  
+  ,pan$jplot + scale_x_continuous(limits = c(min, max))
+  +theme(plot.margin = unit(c(0,0,0,0), "cm") ) +ggtitle ( "Cancer Pan")   + ylab ( "")
+  
+  
+  ,gg$jplot + scale_x_continuous(limits = c(min, max))+ xlab("")+  theme ( axis.text.x=element_blank() )+
+    theme(plot.margin = unit(c(0,0,0,0), "cm") ) +ggtitle ( "GTEx Cohort")   + ylab ( "")
+  
+  , gg_pan$jplot + scale_x_continuous(limits = c(min, max))
+  +theme(plot.margin = unit(c(0,0,0,0), "cm") ) +ggtitle ( "GTEx Pan")   + ylab ( "")
+  
+
+  
+  
+  ,ncol = 1
+)
+
+
+
+
+ggarrange( 
+  
+  tg$jplot+ggtitle ( "Cancer Cohort") + scale_x_continuous(limits = c(min-2, max)) + 
+    theme ( axis.text.x=element_blank() ) +xlab("") +
+    theme(plot.margin = unit(c(0,0,0,0), "cm") )   + ylab ( "")
+  
+  , gg$jplot + scale_x_continuous(limits = c(min-2, max))
+  +theme(plot.margin = unit(c(0,0,0,0), "cm") ) +ggtitle ( "GTEx Pan")   + ylab ( "")
+  
+  
+  
+  
+  ,ncol = 1
+)
+
+
+
+
 
